@@ -76,8 +76,8 @@ USERNAME=my-github-username PLUGIN_NAME=my-awesome-plugin REPOSITORY_NAME=my-awe
 
 ```sh
 rm -rf doc
-mv plugin/your-plugin-name.lua plugin/my-awesome-plugin.lua
-mv lua/your-plugin-name lua/my-awesome-plugin
+mv plugin/paddynvim.lua plugin/my-awesome-plugin.lua
+mv lua/paddynvim lua/my-awesome-plugin
 mv README_TEMPLATE.md README.md 
 
 ```
@@ -85,11 +85,11 @@ mv README_TEMPLATE.md README.md
 #### Search and replace placeholder occurrences:
 
 ```vim
-:vimgrep /YourPluginName/ **/*
-:cfdo %s/YourPluginName/MyAwesomePlugin/g | update
+:vimgrep /PaddyNvim/ **/*
+:cfdo %s/PaddyNvim/MyAwesomePlugin/g | update
 
-:vimgrep /your-plugin-name/ **/* .github/**
-:cfdo %s/your-plugin-name/my-awesome-plugin/g | update
+:vimgrep /paddynvim/ **/* .github/**
+:cfdo %s/paddynvim/my-awesome-plugin/g | update
 
 :vimgrep /YOUR_GITHUB_USERNAME/ .github/** **/*.md
 :cfdo %s/YOUR_GITHUB_USERNAME/shortcuts/g | update

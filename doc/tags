@@ -1,2 +1,2 @@
-YourPluginName.options	neovim-plugin-boilerplate.txt	/*YourPluginName.options*
-YourPluginName.setup()	neovim-plugin-boilerplate.txt	/*YourPluginName.setup()*
+PaddyNvim.options	neovim-plugin-boilerplate.txt	/*PaddyNvim.options*
+PaddyNvim.setup()	neovim-plugin-boilerplate.txt	/*PaddyNvim.setup()*

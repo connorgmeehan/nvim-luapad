@@ -1,41 +1,41 @@
-local M = require("your-plugin-name.main")
-local YourPluginName = {}
+local M = require("paddynvim.main")
+local PaddyNvim = {}
 
 -- Toggle the plugin by calling the `enable`/`disable` methods respectively.
-function YourPluginName.toggle()
+function PaddyNvim.toggle()
     -- when the config is not set to the global object, we set it
-    if _G.YourPluginName.config == nil then
-        _G.YourPluginName.config = require("your-plugin-name.config").options
+    if _G.PaddyNvim.config == nil then
+        _G.PaddyNvim.config = require("paddynvim.config").options
     end
 
-    _G.YourPluginName.state = M.toggle()
+    _G.PaddyNvim.state = M.toggle()
 end
 
--- starts YourPluginName and set internal functions and state.
-function YourPluginName.enable()
-    if _G.YourPluginName.config == nil then
-        _G.YourPluginName.config = require("your-plugin-name.config").options
+-- starts PaddyNvim and set internal functions and state.
+function PaddyNvim.enable()
+    if _G.PaddyNvim.config == nil then
+        _G.PaddyNvim.config = require("paddynvim.config").options
     end
 
     local state = M.enable()
 
     if state ~= nil then
-        _G.YourPluginName.state = state
+        _G.PaddyNvim.state = state
     end
 
     return state
 end
 
--- disables YourPluginName and reset internal functions and state.
-function YourPluginName.disable()
-    _G.YourPluginName.state = M.disable()
+-- disables PaddyNvim and reset internal functions and state.
+function PaddyNvim.disable()
+    _G.PaddyNvim.state = M.disable()
 end
 
--- setup YourPluginName options and merge them with user provided ones.
-function YourPluginName.setup(opts)
-    _G.YourPluginName.config = require("your-plugin-name.config").setup(opts)
+-- setup PaddyNvim options and merge them with user provided ones.
+function PaddyNvim.setup(opts)
+    _G.PaddyNvim.config = require("paddynvim.config").setup(opts)
 end
 
-_G.YourPluginName = YourPluginName
+_G.PaddyNvim = PaddyNvim
 
-return _G.YourPluginName
+return _G.PaddyNvim

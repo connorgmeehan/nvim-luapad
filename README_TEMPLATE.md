@@ -103,11 +103,11 @@ require("lazy").setup({"YOUR_REPOSITORY_NAME"})
 <details>
 <summary>Click to unfold the full list of options with their default values</summary>
 
-> **Note**: The options are also available in Neovim by calling `:h your-plugin-name.options`
+> **Note**: The options are also available in Neovim by calling `:h paddynvim.options`
 
 ```lua
-require("your-plugin-name").setup({
-    -- you can copy the full list from lua/your-plugin-name/config.lua
+require("paddynvim").setup({
+    -- you can copy the full list from lua/paddynvim/config.lua
 })
 ```
 
