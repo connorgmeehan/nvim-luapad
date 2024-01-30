@@ -1,3 +1,5 @@
+local Preview = require('paddynvim.lib.preview')
+local array   = require('paddynvim.util.array')
 local paddy = _G.PaddyNvim
 local C = paddy.config
 local S = paddy._state
@@ -164,8 +166,8 @@ end
 
 function Evaluator:close_preview()
     vim.schedule(function()
-        if self.preview_win and vim.api.nvim_win_is_valid(self.preview_win) then
-            vim.api.nvim_win_close(self.preview_win, false)
+        if self.preview_win then
+            self.preview_win.close()
         end
     end)
 end
@@ -181,32 +183,11 @@ function Evaluator:preview()
     vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
     vim.api.nvim_buf_set_option(buf, "filetype", "lua")
 
-    local content = vim.split(table.concat(vim.tbl_flatten(self.output[line]), "\n"), "\n")
-
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, content)
-
-    local lines = tonumber(vim.api.nvim_win_get_height(0)) - 10
-    local cols = tonumber(vim.api.nvim_win_get_width(0))
-    if vim.fn.screenrow() >= lines then
-        lines = 0
+    if not self.preview_win then
+        self.preview_win = Preview:new()
     end
 
-    local opts = {
-        relative = "win",
-        col = 0,
-        row = lines,
-        height = 10,
-        width = cols,
-        style = "minimal",
-    }
-
-    if self.preview_win and vim.api.nvim_win_is_valid(self.preview_win) then
-        vim.api.nvim_win_set_buf(self.preview_win, buf)
-        vim.api.nvim_win_set_config(self.preview_win, opts)
-    else
-        self.preview_win = vim.api.nvim_open_win(buf, false, opts)
-        vim.api.nvim_win_set_option(self.preview_win, "signcolumn", "no")
-    end
+    self.preview_win:set_content_from_table(self.output[line])
 end
 
 function Evaluator:start()

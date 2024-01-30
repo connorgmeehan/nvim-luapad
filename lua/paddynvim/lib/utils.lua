@@ -7,4 +7,5 @@ M.parse_error = function (str)
   return str:match("%[string.*%]:(%d*): (.*)")
 end
 
+
 return M

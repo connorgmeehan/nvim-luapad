@@ -6,7 +6,7 @@ local parse_error = require'luapad.tools'.parse_error
 
 local ns = vim.api.nvim_create_namespace('luapad_namespace')
 
-Evaluator = {}
+local Evaluator = {}
 Evaluator.__index = Evaluator
 
 local function single_line(arr)
