@@ -32,6 +32,31 @@ M.array_map = function (table, predicate)
     return return_value
 end
 
+M.array_find = function(table, predicate)
+    for index, value in ipairs(table) do
+        if predicate(index, value) then
+            return index
+        end
+    end
+    return nil
+end
+
+M.array_some = function(table, predicate)
+    return type(M.array_find(table, predicate)) ~= "nil"
+end
+
+M.array_contains = function (table, value)
+    return M.array_some(table, function (_, value2)
+        return value == value2
+    end)
+end
+
+M.array_push = function(array, ...)
+    for i, value in ipairs({...}) do
+        local index = #array + i
+        array[index] = value
+    end
+end
+
+
 return M
-
-

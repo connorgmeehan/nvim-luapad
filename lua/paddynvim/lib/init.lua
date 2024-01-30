@@ -1,5 +1,6 @@
 local array = require("paddynvim.util.array")
 local D = require("paddynvim.util.debug")
+local Evaluator = require("paddynvim.lib.evaluator")
 
 ---@class PaddyIntegrationMeta
 ---@field name string
@@ -9,7 +10,7 @@ local D = require("paddynvim.util.debug")
 ---@field meta PaddyIntegrationMeta
 ---@field extra_context table? Add to the luapad context
 ---@field new function(config:Config,buffer_id:number): PaddyIntegration
----@field on_attach function(buffer_id:number)? Called when starting the integration
+---@field on_attach function(paddy:PaddyInstance,buffer_id:number)? Called when starting the integration
 ---@field on_detach function(buffer_id:number)? Called when stopping the integration
 ---@field on_changed function(buffer_id:number)? Called when the buffer changes
 ---@field on_cursor_moved function(buffer_id:number)? Called anytime a cursor moves
@@ -33,6 +34,14 @@ function PaddyInstance:new(plugin, buffer_id)
     local integrations = array.array_map(plugin.config.integrations, function(_, integration)
         return integration.meta.constructor(plugin.config, buffer_id)
     end)
+
+    local has_evaluator = array.array_some(integrations, function (_, int)
+        return int.meta.name == "Evaluator"
+    end)
+
+    if not has_evaluator then
+        array.array_push(integrations, Evaluator:new(plugin.config, buffer_id))
+    end
 
     local fields = {
         P = plugin,
@@ -76,7 +85,7 @@ function PaddyInstance:start()
     vim.api.nvim_create_autocmd("CursorMoved", {
         group = main_group,
         callback = function()
-            self:on_cursor_moved(self.buffer_id)
+            self:on_cursor_moved()
         end,
     })
 
@@ -86,23 +95,24 @@ function PaddyInstance:start()
     vim.api.nvim_create_autocmd("CursorHold", {
         group = self_group,
         callback = function()
-            self:on_cursor_hold(self.buffer_id)
+            self:on_cursor_hold()
         end,
     })
     vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
         group = self_group,
         buffer = self.buffer_id,
         callback = function()
-            self:on_paddy_cursor_moved(self.buffer_id)
+            self:on_paddy_cursor_moved()
         end,
     })
 
     self.autocmd_group_ids = { main_group, self_group }
 
     for _, integration in ipairs(self.integrations) do
+        D.log("trace", "Trying on attach for " .. integration.meta.name)
         local mt = getmetatable(integration)
         if mt and mt.__index and mt.__index.on_attach then
-            integration.on_attach(self.buffer_id)
+            integration:on_attach(self, self.buffer_id)
         end
     end
 
@@ -128,7 +138,6 @@ function PaddyInstance:finish()
 end
 
 function PaddyInstance:on_cursor_moved()
-    D.log("trace", "AutoCmd: cursor moved")
     if not self.active then
         return
     end
@@ -141,20 +150,20 @@ function PaddyInstance:on_cursor_moved()
 end
 
 function PaddyInstance:on_changed()
-    D.log("trace", "AutoCmd: changed")
     if not self.active then
         return
     end
     for _, integration in ipairs(self.integrations) do
         local mt = getmetatable(integration)
+        print('Trying on_changed on ' .. integration.meta.name .. " " .. vim.inspect(mt))
         if mt and mt.__index and mt.__index.on_changed then
+            print('Calling on_changed on ' .. integration.meta.name)
             integration:on_changed(self.buffer_id)
         end
     end
 end
 
 function PaddyInstance:on_cursor_hold()
-    D.log("trace", "AutoCmd: Cursor hold")
     if not self.active then
         return
     end
@@ -167,7 +176,6 @@ function PaddyInstance:on_cursor_hold()
 end
 
 function PaddyInstance:on_paddy_cursor_moved()
-    D.log("trace", "AutoCmd: Cursor moved (paddy buffer)")
     if not self.active then
         return
     end

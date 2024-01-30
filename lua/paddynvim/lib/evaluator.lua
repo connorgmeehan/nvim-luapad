@@ -1,13 +1,13 @@
-local D = require('paddynvim.util.debug')
+local D = require("paddynvim.util.debug")
+local array = require("paddynvim.util.array")
 
-local Preview = require('paddynvim.lib.preview')
+local Preview = require("paddynvim.lib.preview")
 
 local utils = require("paddynvim.lib.utils")
 
 local ns = vim.api.nvim_create_namespace("paddy_namespace")
 
-
---- Default integration for paddy nvim, simply evaluates the buffer and 
+--- Default integration for paddy nvim, simply evaluates the buffer and
 --- displays the output in virtual text or in a floating window.
 ---@class Evaluator: PaddyIntegration
 ---@field C PaddyConfig
@@ -30,15 +30,16 @@ end
 
 Evaluator.meta = {
     name = "Evaluator",
-    constructor = function (config, buffer_id)
+    constructor = function(config, buffer_id)
         return Evaluator:new(config, buffer_id)
-    end
+    end,
 }
 
 ---@param config PaddyConfig
 ---@param buffer_id number
 ---@return Evaluator
 function Evaluator:new(config, buffer_id)
+    D.log("trace", "Evaluator:new(config: " .. vim.inspect(config) .. ", buffer_id: " .. vim.inspect(buffer_id) .. ")")
     assert(buffer_id, "You need to set buf for luapad")
 
     local attrs = {}
@@ -52,9 +53,8 @@ function Evaluator:new(config, buffer_id)
         buf = attrs.buf,
     }
 
-    ---[[@as Evaluator]]
-    local obj = setmetatable(attrs, Evaluator)
-    return obj
+    local instance = setmetatable(attrs, Evaluator)
+    return instance
 end
 
 function Evaluator:set_virtual_text(line, str, color)
@@ -105,7 +105,11 @@ function Evaluator:tcall(fun)
             self.statusline.msg = ("%s: %s"):format((line or ""), (error_msg or ""))
 
             if self.C.error_indicator and line then
-                self:set_virtual_text(tonumber(line) - 1, "<-- " .. error_msg, self.C.error_highlight)
+                self:set_virtual_text(
+                    tonumber(line) - 1,
+                    "<-- " .. error_msg,
+                    self.C.error_highlight
+                )
             end
         end
     end
@@ -141,7 +145,7 @@ end
 function Evaluator:eval()
     D.log("trace", "Evaluator:eval")
 
-    local context = self.context or vim.deepcopy(self.C.context) or {}
+    local context = self.context
     local luapad_print = function(...)
         self:print(...)
     end
@@ -149,7 +153,7 @@ function Evaluator:eval()
     context.luapad = self
     context.p = luapad_print
     context.print = luapad_print
-    context.luapad = self.helper
+    context._paddy_evaluator = self
 
     setmetatable(context, { __index = _G })
 
@@ -175,7 +179,6 @@ function Evaluator:eval()
 end
 
 function Evaluator:close_preview()
-    D.log("trace", "Evaluator:close_preview")
     vim.schedule(function()
         if self.preview_win then
             self.preview_win:close()
@@ -218,9 +221,34 @@ function Evaluator:finish()
     self:close_preview()
 end
 
+---
+---@param paddy_instance PaddyInstance
+function Evaluator:on_attach(paddy_instance)
+    local context = self.context or vim.deepcopy(self.C.context) or {}
+    D.log("trace", "Evaluator:on_attach -> default context " .. vim.inspect(context))
+    local integration_context = array.array_reduce(
+        paddy_instance.integrations,
+        context,
+        function(acc, el)
+            if el.extra_context then
+                return vim.tbl_extend("force", acc, el.extra_context)
+            else
+                return acc
+            end
+        end
+    )
+    self.context = integration_context
+    D.log("trace", "Evaluator:on_attach -> Context " .. vim.inspect(self.context))
+end
+
+function Evaluator:on_detach()
+    self:finish()
+end
+
 function Evaluator:on_changed()
     self:eval()
 end
+
 function Evaluator:on_cursor_hold(buffer_id)
     if self.C.preview.enabled and buffer_id == self.buf then
         self:preview()
