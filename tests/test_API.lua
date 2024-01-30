@@ -32,9 +32,9 @@ T["setup()"]["sets exposed methods and default options value"] = function()
     eq_type_global(child, "_G.PaddyNvim", "table")
 
     -- public methods
-    eq_type_global(child, "_G.PaddyNvim.toggle", "function")
-    eq_type_global(child, "_G.PaddyNvim.disable", "function")
-    eq_type_global(child, "_G.PaddyNvim.enable", "function")
+    eq_type_global(child, "_G.PaddyNvim.set_config", "function")
+    eq_type_global(child, "_G.PaddyNvim.setup", "function")
+    eq_type_global(child, "_G.PaddyNvim.paddy", "function")
 
     -- config
     eq_type_global(child, "_G.PaddyNvim.config", "table")

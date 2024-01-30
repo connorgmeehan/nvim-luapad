@@ -5,6 +5,6 @@ end
 
 _G.PaddyNvimLoaded = true
 
-vim.api.nvim_create_user_command("PaddyNvim", function()
-    require("paddynvim").toggle()
+vim.api.nvim_create_user_command("Paddy", function()
+    require("paddynvim").paddy()
 end, {})

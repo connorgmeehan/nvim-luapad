@@ -3,6 +3,8 @@
 
 all:
 
+run: 
+	nvim --noplugin -u ./scripts/minimal_init.lua
 # runs all the test files.
 test:
 	nvim --version | head -n 1 && echo ''

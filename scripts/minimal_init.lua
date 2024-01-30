@@ -12,4 +12,12 @@ if #vim.api.nvim_list_uis() == 0 then
 
     -- Set up 'mini.doc'
     require("mini.doc").setup()
+else
+    vim.cmd("set rtp+=./")
+    print("Loading paddy nvim.  Init via the :Paddy command")
+    dofile('./plugin/paddynvim.lua')
+
+    require('paddynvim').setup()
+
+    print(vim.inspect(_G.PaddyNvim))
 end
