@@ -2,17 +2,16 @@ local C = _G.PaddyNvim.config
 local D = require('paddynvim.util.debug')
 local array = require('paddynvim.util.array')
 
-local build_window_config = function(width, height)
-    local ui = vim.api.nvim_list_uis()[1]
-    if C.debug then
-        D.log("debug", ("Building window config %s,%s. %s,%s"):format(width, height, ui.width, ui.height))
-    end
+local build_window_config = function(height)
+    local h = math.min(math.max(height, C.preview.min_height), C.preview.max_height)
+    local width = tonumber(vim.api.nvim_win_get_width(0))
+    local row_pos = tonumber(vim.api.nvim_win_get_height(0)) - h
     return {
-        relative = "editor",
+        relative = "win",
+        col = 0,
+        row = row_pos,
         width = width,
-        height = height,
-        col = (ui.width - width) / 2,
-        row = (ui.height - height) / 2,
+        height = h,
         style = "minimal",
         focusable = true,
     }
@@ -80,6 +79,14 @@ function Preview:set_content_from_table(content)
     end)
 
     self:set_content(str_content, width, height)
+end
+
+--- Checks if the window is still valid 
+---@return boolean
+function Preview:is_valid()
+    local window_valid = vim.api.nvim_win_is_valid(self.window_id)
+    local buffer_valid = vim.api.nvim_buf_is_valid(self.buffer_id)
+    return window_valid and buffer_valid
 end
 
 --- Closes the preview window

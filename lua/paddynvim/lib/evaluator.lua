@@ -91,7 +91,6 @@ function Evaluator:tcall(fun)
         elseif result:find("LuapadTimeoutError") then
             self.statusline.status = "timeout"
         else
-            print(result)
             self.statusline.status = "error"
             local line, error_msg = utils.parse_error(result)
             self.statusline.msg = ("%s: %s"):format((line or ""), (error_msg or ""))
@@ -167,7 +166,8 @@ end
 function Evaluator:close_preview()
     vim.schedule(function()
         if self.preview_win then
-            self.preview_win.close()
+            self.preview_win:close()
+            self.preview_win = nil
         end
     end)
 end
@@ -182,6 +182,11 @@ function Evaluator:preview()
     local buf = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
     vim.api.nvim_buf_set_option(buf, "filetype", "lua")
+
+    if self.preview_win and not self.preview_win:is_valid() then
+        self.preview_win:close()
+        self.preview_win = nil
+    end
 
     if not self.preview_win then
         self.preview_win = Preview:new()
@@ -236,7 +241,7 @@ function Evaluator:start()
         group = self_group,
         buffer = self.buf,
         callback = function ()
-            require('paddynvim.lib.handlers').on_cursor_moved(self.buf)
+            require('paddynvim.lib.handlers').on_luapad_cursor_moved(self.buf)
         end
     })
 

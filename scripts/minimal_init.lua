@@ -19,6 +19,4 @@ else
     require('paddynvim').setup({
         debug = "trace"
     })
-
-    print(vim.inspect(_G.PaddyNvim))
 end

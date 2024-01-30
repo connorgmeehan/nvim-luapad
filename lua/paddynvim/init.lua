@@ -18,10 +18,18 @@ local default_config = {
     ---@type table The default context tbl in which luapad buffer is evaluated. Its properties will be available in buffer as "global" variables.
     context = nil,
 
+    ---@type table Options related to preview windows
+    preview = {
+        ---@type boolean     Show floating output window on cursor hold. It's a good idea to set low update time. For example: `let &updatetime = 300` You can jump to it by `^w` `w`.
+        enabled = true,
+        ---@type number minimum height of the preview window.
+        min_height = 10,
+        ---@type number maximum height of the preview window.
+        max_height = 30,
+    },
+
     ---@type number Luapad uses count hook method to prevent infinite loops occurring during code execution. Setting count_limit too high will make Luapad laggy, setting it too low, may cause premature code termination.
     count_limit = 2 * 1e5,
-    ---@type boolean     Show floating output window on cursor hold. It's a good idea to set low update time. For example: `let &updatetime = 300` You can jump to it by `^w` `w`.
-    preview = true,
     ---@type boolean Show virtual text with error message (except syntax or timeout. errors).
     error_indicator = true,
     ---@type string Highlight group used to coloring luapad print output.

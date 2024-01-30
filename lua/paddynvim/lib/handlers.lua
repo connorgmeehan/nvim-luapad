@@ -5,7 +5,7 @@ local S = paddy._state
 local M = {}
 
 M.on_cursor_hold = function(buf)
-  if C.preview then S.instances[buf]:preview() end
+  if C.preview.enabled then S.instances[buf]:preview() end
 end
 
 M.on_luapad_cursor_moved = function(buf)
