@@ -1,21 +1,22 @@
+local D = require('paddynvim.util.debug')
+
 local Preview = require('paddynvim.lib.preview')
-local array   = require('paddynvim.util.array')
-local paddy = _G.PaddyNvim
-local C = paddy.config
-local S = paddy._state
 
 local utils = require("paddynvim.lib.utils")
 
 local ns = vim.api.nvim_create_namespace("paddy_namespace")
 
----@class EvaluatorProps
----@field buf number The buffer number
 
----@class Evaluator: EvaluatorProps
+--- Default integration for paddy nvim, simply evaluates the buffer and 
+--- displays the output in virtual text or in a floating window.
+---@class Evaluator: PaddyIntegration
+---@field C PaddyConfig
+---@field buf number
 ---@field active boolean
 ---@field output table
 ---@field helper table
-Evaluator = {}
+---@field context table
+local Evaluator = {}
 Evaluator.__index = Evaluator
 
 local function single_line(arr)
@@ -27,24 +28,32 @@ local function single_line(arr)
     return table.concat(result, ", ")
 end
 
----
----@param attrs EvaluatorProps
----@return Evaluator
-function Evaluator:new(attrs)
-    attrs = attrs or {}
-    assert(attrs.buf, "You need to set buf for luapad")
+Evaluator.meta = {
+    name = "Evaluator",
+    constructor = function (config, buffer_id)
+        return Evaluator:new(config, buffer_id)
+    end
+}
 
+---@param config PaddyConfig
+---@param buffer_id number
+---@return Evaluator
+function Evaluator:new(config, buffer_id)
+    assert(buffer_id, "You need to set buf for luapad")
+
+    local attrs = {}
+    attrs.C = config
+    attrs.context = {}
+    attrs.buf = buffer_id
     attrs.statusline = { status = "ok" }
     attrs.active = true
     attrs.output = {}
     attrs.helper = {
         buf = attrs.buf,
-        config = paddy.set_config,
     }
 
     ---[[@as Evaluator]]
     local obj = setmetatable(attrs, Evaluator)
-    S.instances[attrs.buf] = obj
     return obj
 end
 
@@ -71,12 +80,12 @@ function Evaluator:update_view()
         for _, v in ipairs(arr) do
             table.insert(res, single_line(v))
         end
-        self:set_virtual_text(line - 1, "  " .. table.concat(res, " | "), C.print_highlight)
+        self:set_virtual_text(line - 1, "  " .. table.concat(res, " | "), self.C.print_highlight)
     end
 end
 
 function Evaluator:tcall(fun)
-    local count_limit = C.count_limit < 1000 and 1000 or C.count_limit
+    local count_limit = self.C.count_limit < 1000 and 1000 or self.C.count_limit
 
     local success, result = pcall(function()
         debug.sethook(function()
@@ -95,8 +104,8 @@ function Evaluator:tcall(fun)
             local line, error_msg = utils.parse_error(result)
             self.statusline.msg = ("%s: %s"):format((line or ""), (error_msg or ""))
 
-            if C.error_indicator and line then
-                self:set_virtual_text(tonumber(line) - 1, "<-- " .. error_msg, C.error_highlight)
+            if self.C.error_indicator and line then
+                self:set_virtual_text(tonumber(line) - 1, "<-- " .. error_msg, self.C.error_highlight)
             end
         end
     end
@@ -130,7 +139,9 @@ function Evaluator:print(...)
 end
 
 function Evaluator:eval()
-    local context = self.context or vim.deepcopy(C.context) or {}
+    D.log("trace", "Evaluator:eval")
+
+    local context = self.context or vim.deepcopy(self.C.context) or {}
     local luapad_print = function(...)
         self:print(...)
     end
@@ -164,6 +175,7 @@ function Evaluator:eval()
 end
 
 function Evaluator:close_preview()
+    D.log("trace", "Evaluator:close_preview")
     vim.schedule(function()
         if self.preview_win then
             self.preview_win:close()
@@ -189,79 +201,40 @@ function Evaluator:preview()
     end
 
     if not self.preview_win then
-        self.preview_win = Preview:new()
+        self.preview_win = Preview:new(self.C)
     end
 
     self.preview_win:set_content_from_table(self.output[line])
 end
 
 function Evaluator:start()
-    local on_change = vim.schedule_wrap(function()
-        if not self.active then
-            return true
-        end
-        if C.eval_on_change then
-            self:eval()
-        end
-    end)
-
-    local on_detach = vim.schedule_wrap(function()
-        self:close_preview()
-        S.instances[self.buf] = nil
-    end)
-
-    vim.api.nvim_buf_attach(0, false, {
-        on_lines = on_change,
-        on_changedtick = on_change,
-        on_detach = on_detach,
-    })
-
-    vim.api.nvim_command("augroup END")
-
-    local main_group = vim.api.nvim_create_augroup("LuapadAutogroup", {
-        clear = true,
-    })
-    vim.api.nvim_create_autocmd("CursorMoved", {
-        group = main_group,
-        callback = function ()
-            require('paddynvim.lib.handlers').on_cursor_moved()
-        end
-    })
-
-    local self_group = vim.api.nvim_create_augroup(("LuapadAutogroupNr"):format(self.buf), {
-        clear = true
-    })
-    vim.api.nvim_create_autocmd("CursorHold", {
-        group = self_group,
-        callback = function ()
-            require('paddynvim.lib.handlers').on_cursor_hold(self.buf)
-        end
-    })
-    vim.api.nvim_create_autocmd({"CursorMoved", "CursorMovedI"}, {
-        group = self_group,
-        buffer = self.buf,
-        callback = function ()
-            require('paddynvim.lib.handlers').on_luapad_cursor_moved(self.buf)
-        end
-    })
-
-    if C.on_init then
-        C.on_init()
-    end
     self:eval()
 end
 
 function Evaluator:finish()
-    self.active = false
-    vim.api.nvim_command(("augroup LuapadAutogroupNr%s"):format(self.buf))
-    vim.api.nvim_command("autocmd!")
-    vim.api.nvim_command("augroup END")
-    S.instances[self.buf] = nil
-
     if vim.api.nvim_buf_is_valid(self.buf) then
         vim.api.nvim_buf_clear_namespace(self.buf, ns, 0, -1)
     end
     self:close_preview()
+end
+
+function Evaluator:on_changed()
+    self:eval()
+end
+function Evaluator:on_cursor_hold(buffer_id)
+    if self.C.preview.enabled and buffer_id == self.buf then
+        self:preview()
+    end
+end
+
+function Evaluator:on_paddy_cursor_moved()
+    self:close_preview()
+end
+
+function Evaluator:on_cursor_moved()
+    if self.C.eval_on_move then
+        self:eval()
+    end
 end
 
 return Evaluator

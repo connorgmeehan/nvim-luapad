@@ -1,13 +1,18 @@
 local fs = require('paddynvim.util.fs')
+local Evaluator = require('paddynvim.lib.evaluator')
+local PaddyInstance = require('paddynvim.lib')
+local D = require("paddynvim.util.debug")
 
 -- main module file
 ---@class PaddyNvim
+---@field config PaddyConfig
+---@field _state PaddyState
 local M = {}
 
 --- Your plugin configuration with its default values.
 ---
 --- Default values:
----@class Config
+---@class PaddyConfig
 ---@eval return MiniDoc.afterlines_to_code(MiniDoc.current.eval_section)
 local default_config = {
     -- Prints useful logs about what event are triggered, and reasons actions are executed.
@@ -28,6 +33,9 @@ local default_config = {
         max_height = 30,
     },
 
+    ---@type PaddyIntegration[] List of integrations to attach to the Paddy buffer.
+    integrations = { Evaluator },
+
     ---@type number Luapad uses count hook method to prevent infinite loops occurring during code execution. Setting count_limit too high will make Luapad laggy, setting it too low, may cause premature code termination.
     count_limit = 2 * 1e5,
     ---@type boolean Show virtual text with error message (except syntax or timeout. errors).
@@ -46,23 +54,23 @@ local default_config = {
     wipe = true,
 }
 
----@type Config
+---@type PaddyConfig
 M.config = default_config
 
 --- Default state of the app
----@class State
----@field instances table<number,Evaluator> Array of buffers where the evaluator is currently attached to.
+---@class PaddyState
+---@field instances table<number,PaddyInstance> Array of buffers where the evaluator is currently attached to.
 local default_state = {
     instances = {},
     gcounter = 0,
 }
 
 --- Sets the config
----@param config Config?
+---@param config PaddyConfig?
 M.set_config = function(config)
     M.config = vim.tbl_deep_extend("force", M.config, config or {})
 end
----@param config Config?
+---@param config PaddyConfig?
 M.setup = function(config)
     M.set_config(config)
     M._state = default_state
@@ -85,7 +93,8 @@ M.paddy = function()
 
     local buf = vim.api.nvim_get_current_buf()
 
-    Evaluator:new({ buf = buf }):start()
+    D.log("trace", "Creating new buffer with id: " .. string.format(buf))
+    PaddyInstance:new(M, buf):start()
 
     vim.api.nvim_buf_set_option(buf, "swapfile", false)
     vim.api.nvim_buf_set_option(buf, "filetype", "lua")

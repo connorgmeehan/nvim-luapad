@@ -18,6 +18,19 @@ M.array_reduce = function (table, initial_value, predicate)
     return return_value
 end
 
+--- 
+---@generic T
+---@generic R 
+---@param table T[]
+---@param predicate function(index:number,value:T):R
+---@return R[]
+M.array_map = function (table, predicate)
+    local return_value = {}
+    for index, value in ipairs(table) do
+        return_value[index] = predicate(index, value)
+    end
+    return return_value
+end
 
 return M
 

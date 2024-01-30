@@ -27,6 +27,7 @@ T["setup()"] = MiniTest.new_set()
 
 T["setup()"]["sets exposed methods and default options value"] = function()
     child.lua([[require('paddynvim').setup()]])
+    child.lua([[require('paddynvim').paddy()]])
 
     -- global object that holds your plugin information
     eq_type_global(child, "_G.PaddyNvim", "table")
