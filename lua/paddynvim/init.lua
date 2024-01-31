@@ -77,8 +77,6 @@ M.setup = function(config)
 end
 
 M.paddy = function()
-    local Evaluator = require('paddynvim.lib.evaluator')
-
     local C = M.config
     local S = M._state
 
