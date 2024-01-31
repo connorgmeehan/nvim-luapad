@@ -225,7 +225,6 @@ end
 ---@param paddy_instance PaddyInstance
 function Evaluator:on_attach(paddy_instance)
     local context = self.context or vim.deepcopy(self.C.context) or {}
-    D.log("trace", "Evaluator:on_attach -> default context " .. vim.inspect(context))
     local integration_context = array.array_reduce(
         paddy_instance.integrations,
         context,
@@ -238,7 +237,7 @@ function Evaluator:on_attach(paddy_instance)
         end
     )
     self.context = integration_context
-    D.log("trace", "Evaluator:on_attach -> Context " .. vim.inspect(self.context))
+    D.log("trace", "Setting context for Paddy" .. vim.inspect(self.context))
 end
 
 function Evaluator:on_detach()

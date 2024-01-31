@@ -35,7 +35,6 @@ function Preview:new(config)
     }
     local obj = setmetatable(fields, self)
 
-    print("Contructed object: ".. vim.inspect(obj))
     return obj
 end
 

@@ -155,9 +155,7 @@ function PaddyInstance:on_changed()
     end
     for _, integration in ipairs(self.integrations) do
         local mt = getmetatable(integration)
-        print('Trying on_changed on ' .. integration.meta.name .. " " .. vim.inspect(mt))
         if mt and mt.__index and mt.__index.on_changed then
-            print('Calling on_changed on ' .. integration.meta.name)
             integration:on_changed(self.buffer_id)
         end
     end
