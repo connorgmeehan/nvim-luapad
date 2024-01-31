@@ -16,10 +16,10 @@ else
     vim.cmd("set rtp+=./")
     dofile('./plugin/paddynvim.lua')
 
-    local paddymath = require('paddymath')
+    local cpml = require('paddynvim.integrations.cpml')
 
     require('paddynvim').setup({
         debug = "trace",
-        integrations = { paddymath },
+        integrations = { cpml },
     })
 end
