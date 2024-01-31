@@ -1,5 +1,5 @@
 --- A 2 component vector.
--- @module vec2
+---@module vec2
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local vec3    = require(modules .. "vec3")
@@ -13,7 +13,9 @@ local sin     = math.sin
 local vec2    = {}
 local vec2_mt = {}
 
--- Private constructor.
+---@param x number?
+---@param y number?
+---@return vec2
 local function new(x, y)
 	return setmetatable({
 		x = x or 0,
@@ -27,26 +29,28 @@ if type(jit) == "table" and jit.status() then
 	status, ffi = pcall(require, "ffi")
 	if status then
 		ffi.cdef "typedef struct { double x, y;} cpml_vec2;"
-		new = ffi.typeof("cpml_vec2")
+        local constructor = ffi.typeof("cpml_vec2")
+        ---@diagnostic disable-next-line: cast-type-mismatch
+        ---@cast constructor function(x:number,y:number):vec2
+		new = constructor
 	end
 end
 
 --- Constants
--- @table vec2
--- @field unit_x X axis of rotation
--- @field unit_y Y axis of rotation
--- @field zero Empty vector
+---@class vec2
+---@field x number
+---@field y number
+---@field unit_x vec2 X axis of rotation
+---@field unit_y vec2 Y axis of rotation
+---@field zero vec2 Empty vector
 vec2.unit_x = new(1, 0)
 vec2.unit_y = new(0, 1)
 vec2.zero   = new(0, 0)
 
 --- The public constructor.
--- @param x Can be of three types: </br>
--- number X component
--- table {x, y} or {x = x, y = y}
--- scalar to fill the vector eg. {x, x}
--- @tparam number y Y component
--- @treturn vec2 out
+---@param x number|nil tor eg. {x, x}
+---@param y number|nil Y component
+---@return vec2 out
 function vec2.new(x, y)
 	-- number, number
 	if x and y then
@@ -72,24 +76,24 @@ function vec2.new(x, y)
 end
 
 --- Convert point from polar to cartesian.
--- @tparam number radius Radius of the point
--- @tparam number theta Angle of the point (in radians)
--- @treturn vec2 out
+---@param radius number Radius of the point
+---@param theta number Angle of the point (in radians)
+---@return vec2 out
 function vec2.from_cartesian(radius, theta)
 	return new(radius * cos(theta), radius * sin(theta))
 end
 
 --- Clone a vector.
--- @tparam vec2 a Vector to be cloned
--- @treturn vec2 out
+---@param a vec2 Vector to be cloned
+---@return vec2 out
 function vec2.clone(a)
 	return new(a.x, a.y)
 end
 
 --- Add two vectors.
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @treturn vec2 out
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@return vec2 out
 function vec2.add(a, b)
 	return new(
 		a.x + b.x,
@@ -100,9 +104,9 @@ end
 --- Subtract one vector from another.
 -- Order: If a and b are positions, computes the direction and distance from b
 -- to a.
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @treturn vec2 out
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@return vec2 out
 function vec2.sub(a, b)
 	return new(
 		a.x - b.x,
@@ -112,9 +116,9 @@ end
 
 --- Multiply a vector by another vector.
 -- Component-size multiplication not matrix multiplication.
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @treturn vec2 out
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@return vec2 out
 function vec2.mul(a, b)
 	return new(
 		a.x * b.x,
@@ -124,9 +128,9 @@ end
 
 --- Divide a vector by another vector.
 -- Component-size inv multiplication. Like a non-uniform scale().
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @treturn vec2 out
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@return vec2 out
 function vec2.div(a, b)
 	return new(
 		a.x / b.x,
@@ -135,8 +139,8 @@ function vec2.div(a, b)
 end
 
 --- Get the normal of a vector.
--- @tparam vec2 a Vector to normalize
--- @treturn vec2 out
+---@param a vec2 Vector to normalize
+---@return vec2 out
 function vec2.normalize(a)
 	if a:is_zero() then
 		return new()
@@ -145,9 +149,9 @@ function vec2.normalize(a)
 end
 
 --- Trim a vector to a given length.
--- @tparam vec2 a Vector to be trimmed
--- @tparam number len Length to trim the vector to
--- @treturn vec2 out
+---@param a vec2 Vector to be trimmed
+---@param len number Length to trim the vector to
+---@return vec2 out
 function vec2.trim(a, len)
 	return a:normalize():scale(math.min(a:len(), len))
 end
@@ -155,39 +159,39 @@ end
 --- Get the cross product of two vectors.
 -- Order: Positive if a is clockwise from b. Magnitude is the area spanned by
 -- the parallelograms that a and b span.
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @treturn number magnitude
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@return number magnitude
 function vec2.cross(a, b)
 	return a.x * b.y - a.y * b.x
 end
 
 --- Get the dot product of two vectors.
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @treturn number dot
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@return number dot
 function vec2.dot(a, b)
 	return a.x * b.x + a.y * b.y
 end
 
 --- Get the length of a vector.
--- @tparam vec2 a Vector to get the length of
--- @treturn number len
+---@param a vec2 Vector to get the length of
+---@return number len
 function vec2.len(a)
 	return sqrt(a.x * a.x + a.y * a.y)
 end
 
 --- Get the squared length of a vector.
--- @tparam vec2 a Vector to get the squared length of
--- @treturn number len
+---@param a vec2 Vector to get the squared length of
+---@return number len
 function vec2.len2(a)
 	return a.x * a.x + a.y * a.y
 end
 
 --- Get the distance between two vectors.
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @treturn number dist
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@return number dist
 function vec2.dist(a, b)
 	local dx = a.x - b.x
 	local dy = a.y - b.y
@@ -195,9 +199,9 @@ function vec2.dist(a, b)
 end
 
 --- Get the squared distance between two vectors.
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @treturn number dist
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@return number dist
 function vec2.dist2(a, b)
 	local dx = a.x - b.x
 	local dy = a.y - b.y
@@ -205,9 +209,9 @@ function vec2.dist2(a, b)
 end
 
 --- Scale a vector by a scalar.
--- @tparam vec2 a Left hand operand
--- @tparam number b Right hand operand
--- @treturn vec2 out
+---@param a vec2 Left hand operand
+---@param b number Right hand operand
+---@return vec2 out
 function vec2.scale(a, b)
 	return new(
 		a.x * b,
@@ -216,9 +220,9 @@ function vec2.scale(a, b)
 end
 
 --- Rotate a vector.
--- @tparam vec2 a Vector to rotate
--- @tparam number phi Angle to rotate vector by (in radians)
--- @treturn vec2 out
+---@param a vec2 Vector to rotate
+---@param phi number Angle to rotate vector by (in radians)
+---@return vec2 out
 function vec2.rotate(a, phi)
 	local c = cos(phi)
 	local s = sin(phi)
@@ -229,17 +233,17 @@ function vec2.rotate(a, phi)
 end
 
 --- Get the perpendicular vector of a vector.
--- @tparam vec2 a Vector to get perpendicular axes from
--- @treturn vec2 out
+---@param a vec2 Vector to get perpendicular axes from
+---@return vec2 out
 function vec2.perpendicular(a)
 	return new(-a.y, a.x)
 end
 
 --- Signed angle from one vector to another.
 -- Rotations from +x to +y are positive.
--- @tparam vec2 a Vector
--- @tparam vec2 b Vector
--- @treturn number angle in (-pi, pi]
+---@param a vec2 Vector
+---@param b vec2 Vector
+---@return number angle in (-pi, pi]
 function vec2.angle_to(a, b)
 	if b then
 		local angle = atan2(b.y, b.x) - atan2(a.y, a.x)
@@ -257,9 +261,9 @@ end
 
 --- Unsigned angle between two vectors.
 -- Directionless and thus commutative.
--- @tparam vec2 a Vector
--- @tparam vec2 b Vector
--- @treturn number angle in [0, pi]
+---@param a vec2 Vector
+---@param b vec2 Vector
+---@return number angle in [0, pi]
 function vec2.angle_between(a, b)
 	if b then
 		if vec2.is_vec2(a) then
@@ -273,42 +277,42 @@ function vec2.angle_between(a, b)
 end
 
 --- Lerp between two vectors.
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @tparam number s Step value
--- @treturn vec2 out
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@param s number Step value
+---@return vec2 out
 function vec2.lerp(a, b, s)
 	return a + (b - a) * s
 end
 
 --- Unpack a vector into individual components.
--- @tparam vec2 a Vector to unpack
--- @treturn number x
--- @treturn number y
+---@param a vec2 Vector to unpack
+---@return number x
+---@return number y
 function vec2.unpack(a)
 	return a.x, a.y
 end
 
 --- Return the component-wise minimum of two vectors.
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @treturn vec2 A vector where each component is the lesser value for that component between the two given vectors.
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@return vec2 A vector where each component is the lesser value for that component between the two given vectors.
 function vec2.component_min(a, b)
 	return new(math.min(a.x, b.x), math.min(a.y, b.y))
 end
 
 --- Return the component-wise maximum of two vectors.
--- @tparam vec2 a Left hand operand
--- @tparam vec2 b Right hand operand
--- @treturn vec2 A vector where each component is the lesser value for that component between the two given vectors.
+---@param a vec2 Left hand operand
+---@param b vec2 Right hand operand
+---@return vec2 A vector where each component is the lesser value for that component between the two given vectors.
 function vec2.component_max(a, b)
 	return new(math.max(a.x, b.x), math.max(a.y, b.y))
 end
 
 
 --- Return a boolean showing if a table is or is not a vec2.
--- @tparam vec2 a Vector to be tested
--- @treturn boolean is_vec2
+---@param a vec2 Vector to be tested
+---@return boolean is_vec2
 function vec2.is_vec2(a)
 	if type(a) == "cdata" then
 		return ffi.istype("cpml_vec2", a)
@@ -321,24 +325,24 @@ function vec2.is_vec2(a)
 end
 
 --- Return a boolean showing if a table is or is not a zero vec2.
--- @tparam vec2 a Vector to be tested
--- @treturn boolean is_zero
+---@param a vec2 Vector to be tested
+---@return boolean is_zero
 function vec2.is_zero(a)
 	return a.x == 0 and a.y == 0
 end
 
 --- Return whether either value is NaN
--- @tparam vec2 a Vector to be tested
--- @treturn boolean if x or y is nan
+---@param a vec2 Vector to be tested
+---@return boolean if x or y is nan
 function vec2.has_nan(a)
 	return private.is_nan(a.x) or
 		private.is_nan(a.y)
 end
 
 --- Convert point from cartesian to polar.
--- @tparam vec2 a Vector to convert
--- @treturn number radius
--- @treturn number theta
+---@param a vec2 Vector to convert
+---@return number radius
+---@return number theta
 function vec2.to_polar(a)
 	local radius = sqrt(a.x^2 + a.y^2)
 	local theta  = atan2(a.y, a.x)
@@ -347,38 +351,38 @@ function vec2.to_polar(a)
 end
 
 -- Round all components to nearest int (or other precision).
--- @tparam vec2 a Vector to round.
--- @tparam precision Digits after the decimal (integer if unspecified)
--- @treturn vec2 Rounded vector
+---@param a vec2 Vector to round.
+---@param precision number? Digit precision after the decimal (integer if unspecified)
+---@return vec2 Rounded vector
 function vec2.round(a, precision)
 	return vec2.new(private.round(a.x, precision), private.round(a.y, precision))
 end
 
 -- Negate x axis only of vector.
--- @tparam vec2 a Vector to x-flip.
--- @treturn vec2 x-flipped vector
+---@param a vec2 Vector to x-flip.
+---@return vec2 x-flipped vector
 function vec2.flip_x(a)
 	return vec2.new(-a.x, a.y)
 end
 
 -- Negate y axis only of vector.
--- @tparam vec2 a Vector to y-flip.
--- @treturn vec2 y-flipped vector
+---@param a vec2 Vector to y-flip.
+---@return vec2 y-flipped vector
 function vec2.flip_y(a)
 	return vec2.new(a.x, -a.y)
 end
 
 -- Convert vec2 to vec3.
--- @tparam vec2 a Vector to convert.
--- @tparam number the new z component, or nil for 0
--- @treturn vec3 Converted vector
+---@param a vec2 Vector to convert.
+---@param z number? the number new z component, or nil for 0
+---@return vec3 Converted vector
 function vec2.to_vec3(a, z)
 	return vec3(a.x, a.y, z or 0)
 end
 
 --- Return a formatted string.
--- @tparam vec2 a Vector to be turned into a string
--- @treturn string formatted
+---@param a vec2 Vector to be turned into a string
+---@return string formatted
 function vec2.to_string(a)
 	return string.format("(%+0.3f,%+0.3f)", a.x, a.y)
 end
