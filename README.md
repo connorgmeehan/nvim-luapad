@@ -1,247 +1,161 @@
-# Interactive neovim scratchpad for lua
+<p align="center">
+  <h1 align="center">PaddyNvim</h2>
+</p>
 
-Luapad runs your code in context with overwritten print function and displays the captured input as virtual text right there, where it was called - **in real time!**
+<p align="center">
+    > Next Generation of LuaPad
+</p>
 
-![Luapad print demo](https://user-images.githubusercontent.com/8767998/198146427-c7488912-16e3-49de-811e-8bbc33c1f3da.gif)
+<!-- <div align="center"> -->
+<!---->
+<!-- > Videos don't work on GitHub mobile, so a GIF alternative can help users. -->
+<!---->
+<!-- _[GIF version of the showcase video for mobile users](SHOWCASE_GIF_LINK)_ -->
+<!---->
+<!-- </div> -->
 
-![luapad colors demo](https://user-images.githubusercontent.com/8767998/198146416-04e026ce-8966-4c57-afc0-12fb62d6cff1.gif)
+## ⚡️ Features
 
--------
+> Write short sentences describing your plugin features
 
-Luapad adds Lua command (as native lua command extension) with deep function completion.
+- FEATURE 1
+- FEATURE ..
+- FEATURE N
 
-![luapad Lua demo](https://user-images.githubusercontent.com/8767998/198146413-d2026d9e-f266-478c-959a-1ac65061aec0.gif)
+## 📋 Installation
 
--------
+<div align="center">
+<table>
+<thead>
+<tr>
+<th>Package manager</th>
+<th>Snippet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
 
-# WARNING!!!
+[folke/lazy.nvim](https://github.com/folke/lazy.nvim)
 
-Luapad evaluates every code that you put in it, so be careful what you type in, specially if it's system calls, file operations etc. Also calling functions like `nvim_open_win` isn't good idea, because every single change in buffer is evaluated (you will get new window with every typed char :D).
-
-Luapad was designed to mess with small nvim lua code chunks. It probably will not work well with big "real" / "production" scripts.
-
-All thoughts or/and error reports are welcome.
-
-### Installation
-
-With vim-plug:
-
-```
-    Plug 'rafcamlet/nvim-luapad'
-```
-
-With packer.nvim and Neovim >= [v0.8.0](https://github.com/neovim/neovim/releases/tag/v0.8.0):
-
-```
-    use 'rafcamlet/nvim-luapad'
-```
-
-In versions of Neovim prior to v0.8.0, the `CursorHold` event is [buggy](https://github.com/neovim/neovim/issues/12587). If you're using an older version, it's recomended to use [this fix](https://github.com/antoinemadec/FixCursorHold.nvim):
-
-```
-    use { 'rafcamlet/nvim-luapad', requires = "antoinemadec/FixCursorHold.nvim" }
-```
-
-### Usage
-
-Luapadd provides three different commands, that will help you with developing neovim plugins in lua:
-  - **Luapad** - which open interactive scratch buffer with real time evaluation.
-  - **LuaRun** - which run content of current buffer as lua script in new scope. You do not need to write file to disc or have to worry about overwriting functions in global scope.
-  - ~~**Lua** - which is extension of native lua command with function completion.~~ *This command will be removed in the next release, because the current version of Neovim has built-in cmd completion.*
-
-From version 0.2 luapad will move towards lua api exposure. Several useful functions are already available.
+</td>
+<td>
 
 ```lua
-require('luapad').init() -- same as Luapad command
-
--- Creates a new luapad instance and attaches it to the current buffer.
--- Optionally, you can pass a context table to it, the elements of which will be
--- available during the evaluation as "global" variables.
-require('luapad').attach({
-  context = { return_4 =  function() return 4 end }
-})
-
--- Detaches current luapad instance from buffer, which just means turning it off. :)
-require('luapad').detach()
-
--- Toggles luapad in current buffer.
-require('luapad').toggle({
-  context = { return_4 =  function() return 4 end }
-})
-
--- You can also create new luapad instance by yourself, which can be helpfull if you
--- want to attach it to a buffer different than the current one.
-local buffer_handler = 5
-require('luapad.evaluator'):new {
-  buf = buffer_handler,
-  context = { a = 'asdf' }
-}:start()
-
--- luapad/run offers a run function (same as the LuaRun command) but allows you
--- to specify a context tbl
-require 'luapad.run'.run {
-  context = {
-    print = function(str) print(string.upper(str)) end
-  }
-}
-
--- If you turn off evaluation on change (and move) you can trigger it manualy by:
-local luapad = require('luapad.evaluator'):new{buf = vim.api.nvim_get_current_buf()}
-luapad:start()
-luapad:eval()
-
--- You can always access current luapad instance by:
-local luapad = require 'luapad.state'.current()
-luapad:eval()
-
--- ...or iterate through all instances
-for _, v in ipairs(require('luapad.state').instances) do
-  v:eval()
-end
+-- stable version
+require("lazy").setup({{"connorgmeehan/paddynvim"}})
+-- dev version
+require("lazy").setup({"connorgmeehan/paddynvim", branch = "dev"})
 ```
 
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 
-### Configuration
+## ☄ Getting started
 
-You can configure luapad via `require('luapad').setup({})` function (or its alias `config`). Configuration via vim globals is disabled. If you want to use old configuration method, please checkout version 0.2.
+> Install and setup the plugin, then run the `:Paddy` command.
 
+## ⚙ Configuration
 
-| Name                    | default value | Description                                                                                                                                                                                                  |
-| ---                     | ---               | ---                                                                                                                                                                                                      |
-| count_limit             | 200000            | Luapad uses count hook method to prevent infinite loops occurring during code execution. Setting count_limit too high will make Luapad laggy, setting it too low, may cause premature code termination.  |
-| error_indicator         | true              | Show virtual text with error message (except syntax or timeout. errors)                                                                                                                                  |
-| preview                 | true              | Show floating output window on cursor hold. It's a good idea to set low update time. For example: `let &updatetime = 300` You can jump to it by `^w` `w`.                                                |
-| eval_on_change          | true              | Evaluate buffer content when it changes.                                                                                                                                                                 |
-| eval_on_move            | false             | Evaluate all luapad buffers when the cursor moves.                                                                                                                                                       |
-| print_highlight         | 'Comment'         | Highlight group used to coloring luapad print output.                                                                                                                                                    |
-| error_highlight         | 'ErrorMsg'        | Highlight group used to coloring luapad error indicator.                                                                                                                                                 |
-| on_init                 | function          | Callback function called after creating new luapad instance.                                                                                                                                             |
-| context                 | {}                | The default context tbl in which luapad buffer is evaluated. Its properties will be available in buffer as "global" variables.                                                                           |
-| split_orientation       | 'vertical'        | The orientation of the split created by `Luapad` command. Can be `vertical` or `horizontal`.                                                                                                             |
-| wipe                    | true              | The Luapad buffer by default is wiped out after closing/loosing a window. If you're used to switching buffers, and you want to keep Luapad instance alive in the background, set it to false. |
+<details>
+<summary>Click to unfold the full list of options with their default values</summary>
 
-
-Example configuration (note it isn't the default one!)
+> **Note**: The options are also available in Neovim by calling `:h paddynvim.options`
 
 ```lua
-require('luapad').setup {
-  count_limit = 150000,
-  error_indicator = false,
-  eval_on_move = true,
-  error_highlight = 'WarningMsg',
-  split_orientation = 'horizontal',
-  on_init = function()
-    print 'Hello from Luapad!'
-  end,
-  context = {
-    the_answer = 42,
-    shout = function(str) return(string.upper(str) .. '!') end
-  }
-}
+require("paddynvim").setup({
+    -- Prints useful logs about what event are triggered, and reasons actions are executed.
+    debug = false,
+
+    ---@type function Callback function called after creating new Paddy instance.
+    on_init = nil,
+    ---@type table The default context tbl in which luapad buffer is evaluated. Its properties will be available in buffer as "global" variables.
+    context = nil,
+
+    ---@type table Options related to preview windows
+    preview = {
+        ---@type boolean Show floating output window on cursor hold. It's a good idea to set low update time. For example: `let &updatetime = 300` You can jump to it by `^w` `w`.
+        enabled = true,
+        ---@type number minimum height of the preview window.
+        min_height = 10,
+        ---@type number maximum height of the preview window.
+        max_height = 30,
+    },
+
+    ---@type PaddyIntegration[] List of integrations to attach to the Paddy buffer. The Evaluator is the default integration and is always active.
+    integrations = { Evaluator },
+
+    ---@type number Luapad uses count hook method to prevent infinite loops occurring during code execution. Setting count_limit too high will make Luapad laggy, setting it too low, may cause premature code termination.
+    count_limit = 2 * 1e5,
+    ---@type boolean Show virtual text with error message (except syntax or timeout. errors).
+    error_indicator = true,
+    ---@type string Highlight group used to coloring luapad print output.
+    print_highlight = "Comment",
+    ---@type string Highlight group used to coloring luapad error indicator.
+    error_highlight = "ErrorMsg",
+    ---@type boolean Evaluate all luapad buffers when the cursor moves.
+    eval_on_move = false,
+    ---@type boolean Evaluate buffer content when it changes.
+    eval_on_change = true,
+    ---@type 'split'|'vsplit' The orientation of the split created by `Luapad` command. Can be `vertical` or `horizontal`.
+    split_orientation = "vsplit",
+    ---@type boolean The Luapad buffer by default is wiped out after closing/loosing a window. If you're used to switching buffers, and you want to keep Luapad instance alive in the background, set it to false.
+    wipe = true,
+})
 ```
 
-### Statusline
-
-Luapad has ready to use lightline function_components.
-
-<details>
-<summary>Example lightline configuration:</summary>
-<pre>
-let g:lightline = {
-      \ 'active': {
-      \   'left': [
-      \     [ 'mode', 'paste' ],
-      \     [ 'readonly', 'filename', 'modified' ],
-      \     [ 'luapad_msg']
-      \   ],
-      \ 'right': [
-      \   ['luapad_status'],
-      \   ['lineinfo'],
-      \   ['percent'],
-      \ ],
-      \ },
-      \ 'component_function': {
-      \   'luapad_msg': 'luapad#lightline_msg',
-      \   'luapad_status': 'luapad#lightline_status',
-      \ },
-      \ }
-</pre>
 </details>
-<br>
 
+## 🧰 Commands
 
-But you can also create your own integration, using lua functions  `require'luapad.statusline'.status()` and `require'luapad.statusline'.msg()`.
+|   Command   |         Description                 |
+|-------------|-------------------------------------|
+|  `:Paddy`   |     Creates a new paddy buffer .    |
 
+## ⚙ Integrations
 
-<details>
-<summary>Example galaxyline configuration:</summary>
-<pre>
-local function luapad_color()
-  if require('luapad.statusline').status() == 'ok' then
-    return colors.green
-  else
-    return colors.red
-  end
-end
-</pre>
+PaddyNvim is extensible via integrations.
 
-<pre>
-require('galaxyline').section.right[1] = {
-  Luapad = {
-    condition = require('luapad.state').current,
-    highlight = { luapad_color(), colors.bg },
-    provider = function()
-      vim.cmd('hi GalaxyLuapad guifg=' .. luapad_color())
-      local status = require('luapad.statusline').status()
-      return string.upper(tostring(status))
-    end
-  }
-}
-</pre>
-</details>
-<br>
+### CPML (Linear Algebra and Vector Math)
 
+Vendored from the [cpml](https://github.com/excessive/cpml) math library, it will inject linear algebra and vector math primitives into the 
+context of all your paddy pads.
 
-### Types of errors
+#### Enabling 
 
-Luapad separates errors into 3 categories:
+```lua
+local cpml = require('paddynvim.integrations.cpml')
+require('paddynvim').setup({
+    integrations = { cpml },
+})
+```
 
-| Error   | Description                                                                                                  |
-| ---     | ---                                                                                                          |
-| SYNTAX  | Content of buffer is not valid lua script (you will see it a lot during typing)                              |
-| TIMEOUT | Interpreter has done more count instructions than luapad_count_limit, so there probably was a infinite loop |
-| ERROR   | Execution logical errors                                                                                     |
+#### Using
+```lua
+--- In a paddy buffer.
+local vec2 = cpml.vec2
 
+local v1 = vec2.new(5, 10)
+local v2 = vec2. new(10, 5)
+print(v1 + v2) -- (+15.000,+15.000)
+```
 
-### Changelog
-#### v0.3
+## ⌨ Contributing
 
-- Drop viml configuration
-- Improve preview window resizing (although it still needs some work)
-- Fix "file no longer available" error
-- Galaxyline example added to readme
-- Upgrading specs
-- Other minor upgrades and refactor
+PRs and issues are always welcome. Make sure to provide as much context as possible when opening one.
 
-#### v0.2
+## 🗞 Wiki
 
-- Better nvim native lsp integration (now you should have lsp completion in luapad buffers)
-- Enable creation of multiple luapads instances
-- Allow luapad to be attached to an existing buffer
-- Add on_init callback
-- Allow providing evaluation context for luapad buffers
-- Allow configure luapad via lua
-- Add `eval_on_move` and `eval_on_change` settings
-- Expose luapad lua api
-- Replace `g:luapad_status` and `g:luapad_msg` variables by `status()` and `msg()` lua functions.
-- Now luapad print function print also nil values
+You can find guides and showcase of the plugin on [the Wiki](https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY_NAME/wiki)
 
-### TODO
-- Allow changing orientation of the preview window
+## 🎭 Motivations
 
-### Shameless self promotion
+> 
 
-If you want to start your adventure with writing lua plugins and are you are wondering where to begin, you can take a look at the links below.
+## Special thanks
 
-1. [How to write neovim plugins in Lua](https://www.2n.pl/blog/how-to-write-neovim-plugins-in-lua)
-2. [How to make UI for neovim plugins in Lua](https://www.2n.pl/blog/how-to-make-ui-for-neovim-plugins-in-lua)
+The idea and basically all the sourcecode was ripped from [rafcamlet](https://github.com/rafcamlet/nvim-luapad).  I just updated some API
+calls and added a vector math integration.
