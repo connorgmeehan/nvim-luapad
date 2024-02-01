@@ -10,9 +10,13 @@
 local Context = {}
 Context.__index = Context
 
+--- 
+---@param canvas Canvas
+---@return Context
 function Context:new(canvas)
     local instance = setmetatable({
-        canvas = canvas,
+        surface = canvas.surface,
+        ctx = canvas.cairo,
         stroke_color = '#000',
         stroke_width = 1,
 
