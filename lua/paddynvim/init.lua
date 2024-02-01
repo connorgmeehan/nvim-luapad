@@ -1,4 +1,5 @@
 local fs = require('paddynvim.util.fs')
+local array = require('paddynvim.util.array')
 local Evaluator = require('paddynvim.lib.evaluator')
 local PaddyInstance = require('paddynvim.lib')
 local D = require("paddynvim.util.debug")
@@ -74,39 +75,117 @@ end
 M.setup = function(config)
     M.set_config(config)
     M._state = default_state
+
+    fs.mkdir(fs.data_path, {
+        exists_ok = true,
+    })
 end
 
-M.paddy = function()
-    local Evaluator = require('paddynvim.lib.evaluator')
+M.commands = {
+    --- Attach to current buffer
+    attach = function ()
+        local C = M.config
 
-    local C = M.config
-    local S = M._state
+        local buf = vim.api.nvim_get_current_buf()
+        D.log("trace", "Paddy: Attaching to buffer" .. vim.inspect(buf))
 
-    local split_orientation = "vsplit"
-    if C.split_orientation == "horizontal" then
-        split_orientation = "split"
+        PaddyInstance:new(M, buf):start()
+
+        vim.api.nvim_buf_set_option(buf, "swapfile", false)
+        vim.api.nvim_buf_set_option(buf, "filetype", "lua")
+        vim.api.nvim_buf_set_option(buf, "bufhidden", C.wipe and "wipe" or "hide")
+        vim.api.nvim_command("au QuitPre <buffer> set nomodified")
+
+        if C.wipe then
+            -- Always try to keep file as modified so it can't be accidentally switched
+            vim.api.nvim_buf_set_option(buf, "modified", true)
+            vim.api.nvim_command(
+                [[au BufWritePost <buffer> lua vim.schedule(function() vim.api.nvim_buf_set_option(0, 'modified', true) end)]]
+            )
+        end
+    end,
+    --- Detatch from current buffer
+    detach = function ()
+        local buf = vim.api.nvim_get_current_buf()
+        D.log("trace", "Paddy: Detaching from buffer" .. vim.inspect(buf))
+        local S = M._state
+        if S.instances[buf] then
+            S.instances[buf]:finish()
+        end
+    end,
+    --- Creates a new paddy pad.
+    ---@param file_name string|nil
+    new = function (file_name)
+        D.log("trace", "Paddy: New paddy at " .. vim.inspect(file_name))
+        local C = M.config
+        local S = M._state
+
+        local split_orientation = "vsplit"
+        if C.split_orientation == "horizontal" then
+            split_orientation = "split"
+        end
+
+        S.gcounter = S.gcounter + 1
+        local file_path = ''
+        if type(file_name) == 'string' then
+            file_path = fs.path(fs.data_path, file_name .. '.lua')
+        else
+            file_path = fs.path('tmp', "Paddy" .. S.gcounter .. '.lua')
+        end
+
+        vim.api.nvim_command("botright " .. split_orientation .. " " .. file_path)
+
+        M.commands.attach()
+    end,
+    ---@param file_name string|nil
+    open = function (file_name)
+        D.log("trace", "Paddy: Opening paddy " .. vim.inspect(file_name))
+        local C = M.config
+
+        local split_orientation = "vsplit"
+        if C.split_orientation == "horizontal" then
+            split_orientation = "split"
+        end
+
+        local file_path = fs.path(fs.data_path, file_name .. '.lua')
+        vim.api.nvim_command("botright " .. split_orientation .. " " .. file_path)
+
+        M.commands.attach()
+    end,
+
+    --- Command completion handler for 
+    ---@param args string[]
+    ---@return string
+    _completion_open = function (args)
+        local contents = fs.list_files(fs.data_path)
+        ---@type string[]
+        local options = array.array_map(contents, function (_, path)
+            local name = fs.file_name(path)
+            if name == nil then
+                return nil
+            end
+            local ext = fs.file_ext(path)
+            local result = name:sub(0, #name - #ext)
+            return result
+        end)
+        return vim.tbl_filter(function (val)
+            return vim.startswith(val, args[3])
+        end, options)
     end
+}
+-- Command aliases
+M.commands.load = M.commands.open
+M.commands._completion_load = M.commands._completion_open
 
-    S.gcounter = S.gcounter + 1
-    local file_path = fs.path('tmp', 'Luapad_' .. S.gcounter .. '.lua')
-    vim.api.nvim_command("botright " .. split_orientation .. " " .. file_path)
+M.paddy = function(args)
+    D.log("trace", "Paddy: Command called with args" .. vim.inspect(args))
+    local cmd_name = args[1]
 
-    local buf = vim.api.nvim_get_current_buf()
-
-    D.log("trace", "Creating new buffer with id: " .. string.format(buf))
-    PaddyInstance:new(M, buf):start()
-
-    vim.api.nvim_buf_set_option(buf, "swapfile", false)
-    vim.api.nvim_buf_set_option(buf, "filetype", "lua")
-    vim.api.nvim_buf_set_option(buf, "bufhidden", C.wipe and "wipe" or "hide")
-    vim.api.nvim_command("au QuitPre <buffer> set nomodified")
-
-    if C.wipe then
-        -- Always try to keep file as modified so it can't be accidentally switched
-        vim.api.nvim_buf_set_option(buf, "modified", true)
-        vim.api.nvim_command(
-            [[au BufWritePost <buffer> lua vim.schedule(function() vim.api.nvim_buf_set_option(0, 'modified', true) end)]]
-        )
+    local handler = M.commands[cmd_name]
+    if handler then
+        handler(args[2], args[3], args[4])
+    else
+        M.commands.new(nil)
     end
 end
 
