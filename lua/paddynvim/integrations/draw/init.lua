@@ -21,7 +21,9 @@ function DrawIntegration:new(c)
 
     local fields = {
         extra_context = {
-            cairo = require('paddynvim.integrations.draw.cairo.cairo')(cairo_path)
+            cairo = function ()
+                return require('paddynvim.integrations.draw.cairo.cairo')(cairo_path)
+            end
         }
     }
     local instance = setmetatable(fields, DrawIntegration)

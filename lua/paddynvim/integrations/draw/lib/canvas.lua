@@ -6,14 +6,12 @@ local Context = require "paddynvim.integrations.draw.lib.context"
 ---@field cairo cairo
 ---@field ctx Context
 
-local cairo = nil
-
 local Canvas = {}
 Canvas.__index = Canvas
 
-function Canvas:new(width, height, cairo_path)
+function Canvas:new(cairo, width, height)
     local instance = setmetatable({
-        cairo = require('paddynvim.integrations.draw.cairo.cairo')(cairo_path),
+        cairo = cairo,
         width = width,
         height = height,
         surface = nil,
@@ -24,10 +22,8 @@ function Canvas:new(width, height, cairo_path)
 end
 
 function Canvas:get_context()
-    if self.cairo == nil then
-    end
     if self.surface == nil then
-        local surface = cairo.image_surface('argb32', self.width, self.height)
+        local surface = self.cairo.image_surface('argb32', self.width, self.height)
         self.surface = surface
     end
     if self.ctx == nil then
