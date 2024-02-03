@@ -87,7 +87,7 @@ M.commands = {
         local C = M.config
 
         local buf = vim.api.nvim_get_current_buf()
-        D.log("trace", "Paddy: Attaching to buffer" .. vim.inspect(buf))
+        D.log("trace", "Paddy: Attaching to buffer: " .. vim.inspect(buf))
 
         PaddyInstance:new(M, buf):start()
 
@@ -188,6 +188,24 @@ M.paddy = function(args)
         M.commands.new(nil)
     end
 end
+
+M.utils = {
+    --- Gets the integration for a given buffer. 
+    ---@param buffer_id number
+    ---@param integration_name string 
+    ---@return PaddyIntegration|nil
+    get_integration = function(buffer_id, integration_name)
+        local instance = M._state.instances[buffer_id]
+        if instance == nil then
+            return nil
+        end
+        local integration =  array.array_find(instance.integrations, function (_, el)
+            return el.meta.name == integration_name
+        end)
+        ---@cast integration PaddyIntegration|nil
+        return integration
+    end
+}
 
 _G.PaddyNvim = M
 

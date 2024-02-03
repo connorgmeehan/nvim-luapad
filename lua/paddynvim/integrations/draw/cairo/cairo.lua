@@ -12,7 +12,7 @@ return function (cairo_so_path)
     require'paddynvim.integrations.draw.cairo.cairo_h'
 
     local so_path = cairo_so_path or 'cairo'
-    local C = ffi.load(so_path)
+    local C = ffi.load(so_path, true)
     local M = {C = C}
 
     --binding vocabulary ---------------------------------------------------------

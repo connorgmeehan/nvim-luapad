@@ -1,3 +1,4 @@
+local D = require('paddynvim.util.debug')
 --- Integration for the cpml lib.
 --- Adds linear algebra and vector math primitives.
 ---
@@ -16,6 +17,7 @@ CpmlIntegration.meta = {
 }
 
 function CpmlIntegration:new()
+    D.log("trace", "CpmlIntegration: new()")
     local fields = {
         extra_context = {
             cpml = {

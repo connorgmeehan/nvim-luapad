@@ -17,9 +17,11 @@ else
     dofile('./plugin/paddynvim.lua')
 
     local cpml = require('paddynvim.integrations.cpml')
+    local draw = require('paddynvim.integrations.draw')
+    local stream = require('paddynvim.integrations.stream')
 
     require('paddynvim').setup({
         debug = "trace",
-        integrations = { cpml },
+        integrations = { cpml, draw, stream },
     })
 end

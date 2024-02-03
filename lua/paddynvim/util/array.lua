@@ -1,5 +1,16 @@
 local M = {}
 
+M.array_equals = function (arr1, arr2)
+    if #arr1 ~= #arr2 then
+        return false
+    end
+    for i, v in ipairs(arr1) do
+        if v ~= arr2[i] then
+            return false
+        end
+    end
+    return true
+end
 ---@param table table
 ---@return number
 M.array_length = function(table)
@@ -32,10 +43,14 @@ M.array_map = function (table, predicate)
     return return_value
 end
 
+---@generic T
+---@param table T[]
+---@param predicate function(index:number,value:T):boolean
+---@return T|nil
 M.array_find = function(table, predicate)
     for index, value in ipairs(table) do
         if predicate(index, value) then
-            return index
+            return value
         end
     end
     return nil

@@ -6,7 +6,6 @@ end
 _G.PaddyNvimLoaded = true
 
 vim.api.nvim_create_user_command("Paddy", function(opts)
-    print(vim.inspect(opts.fargs))
     require("paddynvim").paddy(opts.fargs)
 end, {
     nargs = "*",
@@ -17,10 +16,13 @@ end, {
             local keys = vim.tbl_keys(_G.PaddyNvim.commands)
             return vim.tbl_filter(function (val)
                 -- Filter out private fields (completion handlers)
-                if val:startswith("_") then
+                if val and val:startswith("_") then
                     return false
                 end
-                return vim.startswith(val, args[2])
+                if args[2] then
+                    return vim.startswith(val, args[2])
+                end
+                return false
             end, keys)
         end
         -- Command specific completion handler

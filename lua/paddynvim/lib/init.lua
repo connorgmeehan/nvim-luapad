@@ -13,6 +13,7 @@ local Evaluator = require("paddynvim.lib.evaluator")
 ---@field on_attach function(paddy:PaddyInstance,buffer_id:number)? Called when starting the integration
 ---@field on_detach function(buffer_id:number)? Called when stopping the integration
 ---@field on_changed function(buffer_id:number)? Called when the buffer changes
+---@field on_change_finished function(buffer_id:number)? Called when the buffer changes
 ---@field on_cursor_moved function(buffer_id:number)? Called anytime a cursor moves
 ---@field on_cursor_hold function(bufer_id: number)? Called anytime the CursorHold event triggers
 ---@field on_paddy_cursor_moved function(buf: number)? Called if the cursor moves within the paddy instance buffer
@@ -155,8 +156,14 @@ function PaddyInstance:on_changed()
     end
     for _, integration in ipairs(self.integrations) do
         local mt = getmetatable(integration)
-        if mt and mt.__index and mt.__index.on_changed then
+        if mt and mt.on_changed then
             integration:on_changed(self.buffer_id)
+        end
+    end
+    for _, integration in ipairs(self.integrations) do
+        local mt = getmetatable(integration)
+        if mt and mt.on_change_finished then
+            integration:on_change_finished(self.buffer_id)
         end
     end
 end

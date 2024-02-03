@@ -42,7 +42,6 @@ end
 function Preview:set_content(content, height)
     if self.C.debug then
         D.log("debug", ("Setting content on preview window %s"):format(self.window_id))
-        D.log("debug", ("%s"):format(vim.inspect(content)))
     end
 
     local buf = self.buffer_id

@@ -1,0 +1,89 @@
+local ffi = require('ffi')
+local base64 = require('paddynvim.util.base64')
+local kitty = require('paddynvim.util.kitty')
+print(1, draw)
+draw.import_cairo()
+for k, _ in pairs(draw) do
+    print(k)
+end
+
+local canvas = draw.Canvas:new(400, 400)
+print(canvas)
+local ctx = canvas:get_context()
+local cr = ctx.ctx
+cr:rectangle(100, 100, 200, 200)
+cr:rgba(0, 1, 0, 1)
+cr:fill()
+cr:operator'add'
+cr:rectangle(0, 0, 200, 200)
+cr:rgba(1, 0, 0, 1)
+cr:fill()
+
+local sr = canvas.surface
+print(sr)
+sr:save_png("test.png")
+_G.result = _G.result or {}
+
+local total_length = 0
+local chunks = {} 
+sr:save_png(function(c, data, length)
+	print(c, data, length)
+	local d = ffi.cast("char *", data)
+	local str = ffi.string(d,length)
+	table.insert(chunks, str)
+	return 0
+end, nil)
+print(chunks)
+local data = table.concat(chunks)
+
+local b64 = base64.encode(data)
+
+_G.img = _G.img or 1
+print(_G.temp)
+
+local transmit_png = function(source, keys)
+    keys = keys or {}
+    keys = vim.tbl_extend('keep', keys, {
+        format = 100,
+        transmission_type = 'd',
+        data_width = 20,
+        data_height = 20,
+        data_size = nil,
+        data_offset = nil,
+        image_number = nil,
+        compressed = nil,
+        image_id = nil,
+        placement_id = 1,
+	image_id = 2,
+    })
+
+    keys.action = 't'
+    keys.quiet = 2
+
+    kitty.send_graphics_command(keys, source)
+end
+
+local display_png = function(x, y, w, h, keys)
+    keys = keys or {}
+    keys = vim.tbl_extend('keep', keys, {
+	x_offset = 0,
+	y_offset = 0,
+        cols = w,
+        rows = h,
+        z_index = 1,
+    })
+    keys.action = 'p'
+    keys.image_id = 2
+    keys.cursor_movement = 1
+    keys.quiet = 2
+
+    kitty.move_cursor(y, x)
+    kitty.send_graphics_command(keys)
+    kitty.restore_cursor()
+end
+
+
+transmit_png(b64) 
+display_png(66, 0, 20, 20)
+
+

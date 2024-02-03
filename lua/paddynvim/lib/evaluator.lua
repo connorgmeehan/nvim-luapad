@@ -39,7 +39,7 @@ Evaluator.meta = {
 ---@param buffer_id number
 ---@return Evaluator
 function Evaluator:new(config, buffer_id)
-    D.log("trace", "Evaluator:new(config: " .. vim.inspect(config) .. ", buffer_id: " .. vim.inspect(buffer_id) .. ")")
+    D.log("trace", "Evaluator:new(config: ..., buffer_id: " .. vim.inspect(buffer_id) .. ")")
     assert(buffer_id, "You need to set buf for luapad")
 
     local attrs = {}
@@ -237,7 +237,7 @@ function Evaluator:on_attach(paddy_instance)
         end
     )
     self.context = integration_context
-    D.log("trace", "Setting context for Paddy" .. vim.inspect(self.context))
+    D.log("trace", "Setting context for Paddy" .. vim.inspect(vim.tbl_keys(self.context)))
 end
 
 function Evaluator:on_detach()
