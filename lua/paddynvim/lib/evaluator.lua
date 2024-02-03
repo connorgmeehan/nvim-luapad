@@ -243,7 +243,7 @@ function Evaluator:on_attach(paddy_instance)
 end
 
 function Evaluator:on_detach()
-    D.log("trace", "Evaluator:on_update")
+    D.log("trace", "Evaluator:on_detach")
     self:finish()
 end
 

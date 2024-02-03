@@ -58,6 +58,23 @@ function RetainedManager:get_unique_id()
     self.unique_id = self.unique_id + 1
     return id
 end
+function RetainedManager:on_attach()
+    for _, v in ipairs(self.elements) do
+        local mt = getmetatable(v)
+        if mt.on_detach then
+            v:on_detach()
+        end
+    end
+end
+
+function RetainedManager:on_detach()
+    for _, v in ipairs(self.elements) do
+        local mt = getmetatable(v)
+        if mt.on_detach then
+            v:on_detach()
+        end
+    end
+end
 
 function RetainedManager:on_pre_update()
     self.prev_elements = self.elements

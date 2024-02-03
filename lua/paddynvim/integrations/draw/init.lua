@@ -69,5 +69,9 @@ function DrawIntegration:on_post_update()
     self._state.canvas_manager:on_post_update()
 end
 
+function DrawIntegration:on_detach()
+    self._state.canvas_manager:on_detach()
+end
+
 return DrawIntegration
 

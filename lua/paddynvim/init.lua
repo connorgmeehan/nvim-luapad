@@ -179,6 +179,10 @@ M.commands._completion_load = M.commands._completion_open
 
 M.paddy = function(args)
     D.log("trace", "Paddy: Command called with args" .. vim.inspect(args))
+    if args == nil then
+        M.commands.new(nil)
+    end
+
     local cmd_name = args[1]
 
     local handler = M.commands[cmd_name]

@@ -145,7 +145,7 @@ function PaddyInstance:finish()
     for _, integration in ipairs(self.integrations) do
         local mt = getmetatable(integration)
         if mt and mt.__index and mt.__index.on_detach then
-            integration.on_detach(self.buffer_id)
+            integration:on_detach(self.buffer_id)
         end
     end
 end

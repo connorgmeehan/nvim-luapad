@@ -138,4 +138,8 @@ function Canvas:on_post_update()
     self.image:draw()
 end
 
+function Canvas:on_detach()
+    self:dispose()
+end
+
 return Canvas
