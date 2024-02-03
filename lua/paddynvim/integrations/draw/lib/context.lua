@@ -1,3 +1,4 @@
+local D = require('paddynvim.util.debug')
 
 ---@class Context
 ---@field canvas Canvas
@@ -15,57 +16,110 @@ Context.__index = Context
 ---@return Context
 function Context:new(canvas)
     local instance = setmetatable({
-        surface = canvas.surface,
+        parent_canvas = canvas,
         ctx = canvas.surface:context(),
-        stroke_color = '#000',
+        _fill_color = {1, 1, 1, 1},
+        _stroke_color = {0.5, 0.5, 0.5, 1},
         stroke_width = 1,
 
-        command_index = 1,
         commands = {}
     }, self)
 
     return instance
 end
 
---- 
----@vararg any
-function Context:push_command(cmd)
-    self.commands[self.command_index] = cmd
-    self.command_index = self.command_index + 1
+function Context:_push_command(...)
+    local cmd = {...}
+    D.log("trace", "[DrawIntegration]Context:push_command " .. cmd[1])
+    table.insert(self.commands, cmd)
+end
+function Context:_set_color(color)
+    local r,g,b,a = unpack(color)
+    if a == nil then
+        self:_push_command("rgb", r, g, b)
+    else
+        self:_push_command("rgba", r, g, b, a)
+    end
 end
 
-function Context:stroke(w, r, g, b, a)
-    self:push_command({ "rgba", r, g, b, a })
-    self:push_command({ "stroke_width", w})
-    self:push_command({ "stroke" })
+function Context:background(r,g,b,a)
+    local w = self.parent_canvas.width
+    local h = self.parent_canvas.height
+    self:_push_command("rectangle", 0, 0, w, h)
+    if a == nil then
+        self:_push_command("rgb", r, g, b)
+    else
+        self:_push_command("rgba", r, g, b, a)
+    end
+    self:_push_command("fill")
 end
 
-function Context:fill(r, g, b, a)
-    self:push_command({ "rgba", r, g, b, a })
-    self:push_command({ "fill" })
+function Context:fill_color(r, g, b, a)
+    self._fill_color = {r, g, b, a}
+end
+function Context:stroke_color(r, g, b, a)
+    self._stroke_color = {r, g, b, a}
 end
 
-function Context:rectangle(x, y, w, h)
-    self:push_command({ "rectangle", x, y, w, h })
+function Context:fill_rect(x, y, w, h)
+    self:_push_command("rectangle", y, x, w, h)
+    self:_set_color(self._fill_color)
+    self:_push_command("fill")
+end
+function Context:fill_circle(x, y, radius)
+    self:_push_command("circle", y, x, radius)
+    self:_set_color(self._fill_color)
+    self:_push_command("fill")
 end
 
-function Context:stroke_color(color)
-    self:push_command({ "stroke_color", color })
+function Context:line_width(w)
+    self._line_width = w
+end
+function Context:start_path()
+    self:_push_command("new_path")
+end
+function Context:move_to(x, y)
+    self:_push_command("move_to", x, y, x, y)
+end
+function Context:line_to(x, y)
+    self:_push_command("line_to", x, y)
+end
+function Context:quad_to(cx, cy, x, y)
+    self:_push_command("curve_to", cx, cy, x, y)
+end
+function Context:cubic_to(c1x, c1y, c2x, c2y, x, y)
+    self:_push_command("curve_to", c1x, c1y, c2x, c2y, x, y)
+end
+function Context:finish_path()
+    self:_push_command("close_path")
+    self:_push_command("line_width", self._line_width)
+    self:_set_color(self._stroke_color)
+    self:_push_command("stroke")
 end
 
-function Context:line(x1, y1, x2, y2)
-    self:push_command({ "line", x1, y1, x2, y2 })
-end
-
-function Context:flush()
-    for _, cmd in ipairs(self.commands) do
-        local cmd_str, a1, a2, a3, a4, a5, a6, a7, a8 = table.unpack(cmd)
-        self.ctx[cmd_str](self.ctx, a1, a2, a3, a4, a5, a6, a7, a8)
+function Context:finish()
+    D.log("trace", ("[DrawIntegration]Context:finish with %s commands - %s " ):format(#self.commands, vim.inspect(self.commands)))
+    local ok, err = pcall(function ()
+        for i=1,#self.commands,1 do
+            local cmd = self.commands[i]
+            local cmd_str = cmd[1]
+            local args_length = #cmd - 1
+            local args = {self.ctx}
+            for j=1,args_length,1 do
+                table.insert(args, cmd[j+1])
+            end
+            self.ctx[cmd_str](unpack(args))
+        end
+    end)
+    self.commands = {}
+    D.log("trace", ("[DrawIntegration]Context:finish done!" ):format())
+    if not ok then
+        error("Error while drawing context: " .. vim.inspect(err))
     end
 end
 
 function Context:dispose()
-    -- self.ctx:free()
+    self.ctx:free()
 end
 
 return Context

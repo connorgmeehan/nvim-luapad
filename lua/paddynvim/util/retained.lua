@@ -1,3 +1,4 @@
+local D = require('paddynvim.util.debug')
 ---@module paddynvim.util.retained
 ---@author Connor Meehan
 ---@license MIT
@@ -29,11 +30,13 @@ end
 ---@param element T
 ---@return T|nil
 function RetainedManager:register_or_get_retained(id, element)
+    D.log("trace", "register_or_get_retained(id " .. id .. ", element: ...) with prev_elements: " .. vim.inspect(#self.prev_elements))
     self.elements[id] = element
     local is_same = false
     local prev = self.prev_elements[id]
     if prev then
-        if prev.retained_equals then
+        local mt = getmetatable(prev)
+        if mt.retained_equals then
             if prev:retained_equals(element) then
                 is_same = true
             end
@@ -56,18 +59,29 @@ function RetainedManager:get_unique_id()
     return id
 end
 
-function RetainedManager:pre_change()
-    for _, v in ipairs(self.elements) do
-        local mt = getmetatable(v)
-        if mt.pre_update then
-            v:pre_update()
-        end
-    end
+function RetainedManager:on_pre_update()
     self.prev_elements = self.elements
     self.elements = {}
+    for _, v in ipairs(self.elements) do
+        local mt = getmetatable(v)
+        if mt.on_pre_update then
+            v:on_pre_update()
+        end
+    end
+
+    D.log("trace", "RetainedManager:on_pre_update() Updated elements prev: " .. #self.prev_elements .. "elements: " .. #self.elements)
 end
 
-function RetainedManager:post_change()
+function RetainedManager:on_update()
+    for _, v in ipairs(self.elements) do
+        local mt = getmetatable(v)
+        if mt.on_update then
+            v:on_update()
+        end
+    end
+end
+
+function RetainedManager:on_post_update()
     self.unique_id = 1
     local length = math.max(#self.elements, #self.prev_elements)
     for i = 1, length, 1 do
@@ -79,8 +93,28 @@ function RetainedManager:post_change()
     end
     for _, v in ipairs(self.elements) do
         local mt = getmetatable(v)
-        if mt.post_update then
-            v:post_update()
+        if mt.on_post_update then
+            v:on_post_update()
+        end
+    end
+
+    D.log("trace", "RetainedManager:on_post_update() self.prev_elements " .. #self.prev_elements .. " self.elements " .. #self.elements)
+end
+
+function RetainedManager:on_focus()
+    for _, v in ipairs(self.elements) do
+        local mt = getmetatable(v)
+        if mt.on_blur then
+            v:on_blur()
+        end
+    end
+end
+
+function RetainedManager:on_blur()
+    for _, v in ipairs(self.elements) do
+        local mt = getmetatable(v)
+        if mt.on_blur then
+            v:on_blur()
         end
     end
 end

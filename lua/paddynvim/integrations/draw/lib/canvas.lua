@@ -1,6 +1,10 @@
 local ffi = require('ffi')
+local D = require('paddynvim.util.debug')
 local Context = require "paddynvim.integrations.draw.lib.context"
 local retained_utils = require "paddynvim.util.retained"
+local coordinates    = require "paddynvim.util.coordinates"
+local kitty          = require "paddynvim.util.kitty"
+local Image          = require "paddynvim.integrations.draw.lib.new_image"
 ---@class Canvas
 ---@field width number
 ---@field height number
@@ -24,17 +28,23 @@ function Canvas:new(width, height)
     local instance = setmetatable({
         draw_integration = draw_integration,
         id = id,
+        buffer_line = coordinates.get_eval_buffer_line(1),
         width = width,
         height = height,
+        dirty = true, -- Requires transfer
         surface = nil,
         context = nil,
+        image = nil, -- Contains the renderable image
     }, self)
+
     local retained = Canvas._manager:register_or_get_retained(id, instance)
+    retained.buffer_line = instance.buffer_line
 
     return retained
 end
 
 function Canvas:retained_equals(other)
+    D.log("trace", "[DrawIntegration]Canvas: Comparing retained self with other " .. vim.inspect({ w = self.width, h = self.height}) .. " " .. vim.inspect({ w = other.width, h = other.height}))
     return self.width == other.width and self.height == other.height
 end
 
@@ -92,9 +102,28 @@ function Canvas:dispose()
     if self.context then
         self.context:dispose()
     end
+    if self.image then
+        self.image:dispose()
+    end
+    if self.surface then
+        self.surface:free()
+    end
 end
 
-function Canvas:post_update()
+function Canvas:on_post_update()
+    D.log("trace", "[DrawIntegration] Canvas:post_update")
+    if not self.context or not self.dirty then
+        return
+    end
+
+    if not self.image then
+        self.image = Image:from_canvas(self)
+    else
+        self.image:update_from_canvas(self)
+    end
+
+    self.image:transfer()
+    self.image:draw()
 end
 
 return Canvas

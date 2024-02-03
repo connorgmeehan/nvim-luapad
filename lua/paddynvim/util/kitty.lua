@@ -46,11 +46,42 @@ local CTRL_KEYS = {
 
 --- 
 ---@param source 
-M.transmit_png = function (source)
+M.transmit_png = function (image_id, source)
+    D.log("kitty utils", "transmit_png")
     M.send_graphics_command({
         format = 100, -- PNG
         transmission_type = 'd', -- Direct
+        image_id = image_id,
+        action = 't',
+        quiet = 2,
     }, source)
+end
+--- 
+---@param source 
+M.display_png = function (image_id, x, y, cols, rows)
+    D.log("kitty utils", "display")
+    M.move_cursor(x, y)
+    M.send_graphics_command({
+        action = 'p', -- Display Image by id
+        image_id = image_id,
+        cols = cols,
+        rows = rows,
+        quiet = 2,
+        cursor_movement = 1,
+        z_index = 1,
+    })
+    M.restore_cursor()
+end
+
+--- 
+---@param source 
+M.delete_png = function (image_id)
+    D.log("kitty utils", "delete")
+    M.send_graphics_command({
+        action = 'd', -- Display Image by id
+        image_id = image_id,
+        quiet = 2,
+    })
 end
 
 M.send_graphics_command = function (keys, payload)

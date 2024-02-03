@@ -1,5 +1,6 @@
 local D = require("paddynvim.util.debug")
 local array = require("paddynvim.util.array")
+local coordinates = require("paddynvim.util.coordinates")
 
 local Preview = require("paddynvim.lib.preview")
 
@@ -130,11 +131,11 @@ function Evaluator:print(...)
         table.insert(str, tostring(vim.inspect(args[i])))
     end
 
-    local line = debug.traceback("", 3):match("^.-]:(%d-):")
-    if not line then
+    local line = coordinates.get_eval_buffer_line(1)
+
+    if line == nil then
         return
     end
-    line = tonumber(line)
 
     if not self.output[line] then
         self.output[line] = {}
@@ -224,6 +225,7 @@ end
 ---
 ---@param paddy_instance PaddyInstance
 function Evaluator:on_attach(paddy_instance)
+    D.log("trace", "Evaluator:on_attach")
     local context = self.context or vim.deepcopy(self.C.context) or {}
     local integration_context = array.array_reduce(
         paddy_instance.integrations,
@@ -241,27 +243,31 @@ function Evaluator:on_attach(paddy_instance)
 end
 
 function Evaluator:on_detach()
+    D.log("trace", "Evaluator:on_update")
     self:finish()
 end
 
-function Evaluator:on_changed()
+function Evaluator:on_update()
+    D.log("trace", "Evaluator:on_update")
     self:eval()
 end
 
 function Evaluator:on_cursor_hold(buffer_id)
+    D.log("trace", "Evaluator:on_cursor_hold")
     if self.C.preview.enabled and buffer_id == self.buf then
         self:preview()
     end
 end
 
-function Evaluator:on_paddy_cursor_moved()
-    self:close_preview()
-end
-
 function Evaluator:on_cursor_moved()
+    self:close_preview()
     if self.C.eval_on_move then
         self:eval()
     end
+end
+
+function Evaluator:on_blur()
+    self:close_preview()
 end
 
 return Evaluator

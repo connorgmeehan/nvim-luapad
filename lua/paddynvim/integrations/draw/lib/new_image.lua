@@ -1,12 +1,7 @@
-local retained_utils = require "paddynvim.util.retained"
+local base64         = require('paddynvim.util.base64')
+local kitty          = require "paddynvim.util.kitty"
 --- Converts from human readable file format to kitty code.
 ---@enum 
-local KITTY_FORMATS = {
-    png = 100
-}
-local format_to_kitty = function(format)
-    return KITTY_FORMATS[format]
-end
 
 ---@class ImageOpts
 ---@field data number[]
@@ -15,7 +10,6 @@ end
 ---@field height number
 
 local Image = {}
-Image._manager = retained_utils.RetainedManager:new()
 Image.__index = Image
 
 
@@ -23,26 +17,46 @@ Image.__index = Image
 ---@param canvas Canvas
 function Image:from_canvas(canvas)
     return self:new({
+        id = canvas.id,
+        x = 0,
+        y = 0,
+        cols = 20,
+        rows = 20,
         data = canvas:png_data(),
         width = canvas.width,
         height = canvas.height,
         format = 'png',
     })
 end
-
+--
 --- Creates a new image
 ---@param opts ImageOpts
 function Image:new(opts)
-    local id = Image._manager:get_unique_id()
-
     local instance = setmetatable(opts, self)
-    local retained = Image._manager:register_or_get_retained(id, instance)
-    return retained
+    instance:transfer()
+    return instance
 end
 
-function Image:_transfer()
+function Image:move_absolute(x, y)
+    self.x = x
+    self.y = y
 end
 
-function Image:draw(x, y)
-
+function Image:update_from_canvas(canvas)
+    self.data = canvas:png_data()
 end
+--- 
+function Image:transfer()
+    local data = base64.encode(self.data)
+    kitty.transmit_png(self.id, data)
+end
+
+function Image:draw()
+    kitty.display_png(self.id, self.x, self.y, self.cols, self.rows)
+end
+
+function Image:dispose()
+    kitty.delete_png(self.id)
+end
+
+return Image

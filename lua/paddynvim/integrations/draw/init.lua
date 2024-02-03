@@ -54,13 +54,19 @@ function DrawIntegration:new(c)
     return instance
 end
 
-function DrawIntegration:on_changed()
-    self._state.canvas_manager:pre_change()
+function DrawIntegration:on_pre_update()
+    D.log("trace", "DrawIntegration:on_pre_update()")
+    self._state.canvas_manager:on_pre_update()
 end
 
-function DrawIntegration:on_change_finished()
-    D.log("trace", "StreamIntegration:on_change_finished()")
-    self._state.canvas_manager:post_change()
+function DrawIntegration:on_update()
+    D.log("trace", "DrawIntegration:on_update()")
+    self._state.canvas_manager:on_update()
+end
+
+function DrawIntegration:on_post_update()
+    D.log("trace", "DrawIntegration:on_post_update()")
+    self._state.canvas_manager:on_post_update()
 end
 
 return DrawIntegration

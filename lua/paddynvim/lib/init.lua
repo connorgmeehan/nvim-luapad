@@ -6,17 +6,24 @@ local Evaluator = require("paddynvim.lib.evaluator")
 ---@field name string
 ---@field constructor function(config:Config,buffer_id:number):PaddyIntegration
 
+--- Class for a paddy integration, Basically a bunch of functions representing the lifecycle of a paddy buffer.
 ---@class PaddyIntegration
 ---@field meta PaddyIntegrationMeta
 ---@field extra_context table? Add to the luapad context
 ---@field new function(config:Config,buffer_id:number): PaddyIntegration
+--
 ---@field on_attach function(paddy:PaddyInstance,buffer_id:number)? Called when starting the integration
 ---@field on_detach function(buffer_id:number)? Called when stopping the integration
----@field on_changed function(buffer_id:number)? Called when the buffer changes
----@field on_change_finished function(buffer_id:number)? Called when the buffer changes
+--
+---@field on_pre_update function(buffer_id:number)? Called when the buffer changes
+---@field on_update function(buffer_id:number)? Called when the buffer changes
+---@field on_post_update function(buffer_id:number)? Called when the buffer changes
+--
+---@field on_focus function(buffer_id:number)? Called when the paddy buffer is focused
+---@field on_blur function(buffer_id:number)? Called when the paddy buffer loses focus
+--
 ---@field on_cursor_moved function(buffer_id:number)? Called anytime a cursor moves
 ---@field on_cursor_hold function(bufer_id: number)? Called anytime the CursorHold event triggers
----@field on_paddy_cursor_moved function(buf: number)? Called if the cursor moves within the paddy instance buffer
 
 --- The PaddyInstance class
 ---@class PaddyInstance
@@ -63,7 +70,7 @@ function PaddyInstance:start()
             return true
         end
         if self.P.config.eval_on_change then
-            self:on_changed()
+            self:update()
         end
     end)
 
@@ -80,21 +87,26 @@ function PaddyInstance:start()
 
     vim.api.nvim_command("augroup END")
 
-    local main_group = vim.api.nvim_create_augroup("LuapadAutogroup", {
-        clear = true,
-    })
-    vim.api.nvim_create_autocmd("CursorMoved", {
-        group = main_group,
-        callback = function()
-            self:on_cursor_moved()
-        end,
-    })
-
     local self_group = vim.api.nvim_create_augroup(("LuapadAutogroupNr"):format(self.buffer_id), {
         clear = true,
     })
+    vim.api.nvim_create_autocmd("BufEnter", {
+        group = self_group,
+        buffer = self.buffer_id,
+        callback = function ()
+            self:on_focus()
+        end
+    })
+    vim.api.nvim_create_autocmd("BufLeave", {
+        group = self_group,
+        buffer = self.buffer_id,
+        callback = function ()
+            self:on_blur()
+        end
+    })
     vim.api.nvim_create_autocmd("CursorHold", {
         group = self_group,
+        buffer = self.buffer_id,
         callback = function()
             self:on_cursor_hold()
         end,
@@ -107,7 +119,7 @@ function PaddyInstance:start()
         end,
     })
 
-    self.autocmd_group_ids = { main_group, self_group }
+    self.autocmd_group_ids = { self_group }
 
     for _, integration in ipairs(self.integrations) do
         D.log("trace", "Trying on attach for " .. integration.meta.name)
@@ -120,7 +132,7 @@ function PaddyInstance:start()
     if self.P.config.on_init then
         self.P.config.on_init()
     end
-    self:on_changed()
+    self:update()
 end
 
 --- Stops the paddy instance, unbinds all the events.
@@ -142,6 +154,7 @@ function PaddyInstance:on_cursor_moved()
     if not self.active then
         return
     end
+    D.log("trace", "PaddyInstance:on_cursor_moved")
     for _, integration in ipairs(self.integrations) do
         local mt = getmetatable(integration)
         if mt and mt.__index and mt.__index.on_cursor_moved then
@@ -150,20 +163,28 @@ function PaddyInstance:on_cursor_moved()
     end
 end
 
-function PaddyInstance:on_changed()
+function PaddyInstance:update()
     if not self.active then
         return
     end
+    D.log("trace", "PaddyInstance:update")
     for _, integration in ipairs(self.integrations) do
         local mt = getmetatable(integration)
-        if mt and mt.on_changed then
-            integration:on_changed(self.buffer_id)
+        if mt and mt.on_pre_update then
+            integration:on_pre_update(self.buffer_id)
         end
     end
     for _, integration in ipairs(self.integrations) do
         local mt = getmetatable(integration)
-        if mt and mt.on_change_finished then
-            integration:on_change_finished(self.buffer_id)
+        D.log("trace", "PaddyInstance:update " .. integration.meta.name .. " = " .. vim.inspect(vim.tbl_keys(mt)))
+        if mt and mt.on_update then
+            integration:on_update(self.buffer_id)
+        end
+    end
+    for _, integration in ipairs(self.integrations) do
+        local mt = getmetatable(integration)
+        if mt and mt.on_post_update then
+            integration:on_post_update(self.buffer_id)
         end
     end
 end
@@ -172,6 +193,7 @@ function PaddyInstance:on_cursor_hold()
     if not self.active then
         return
     end
+    D.log("trace", "PaddyInstance:on_cursor_hold")
     for _, integration in ipairs(self.integrations) do
         local mt = getmetatable(integration)
         if mt and mt.__index and mt.__index.on_cursor_hold then
@@ -184,10 +206,37 @@ function PaddyInstance:on_paddy_cursor_moved()
     if not self.active then
         return
     end
+    D.log("trace", "PaddyInstance:on_cursor_moved")
     for _, integration in ipairs(self.integrations) do
         local mt = getmetatable(integration)
         if mt and mt.__index and mt.__index.on_paddy_cursor_moved then
-            integration:on_paddy_cursor_moved(self.buffer_id)
+            integration:on_cursor_moved(self.buffer_id)
+        end
+    end
+end
+
+function PaddyInstance:on_focus()
+    if not self.active then
+        return
+    end
+    D.log("trace", "PaddyInstance:on_focus")
+    for _, integration in ipairs(self.integrations) do
+        local mt = getmetatable(integration)
+        if mt and mt.__index and mt.__index.on_focus then
+            integration:on_focus(self.buffer_id)
+        end
+    end
+end
+
+function PaddyInstance:on_blur()
+    if not self.active then
+        return
+    end
+    D.log("trace", "PaddyInstance:on_blur")
+    for _, integration in ipairs(self.integrations) do
+        local mt = getmetatable(integration)
+        if mt and mt.__index and mt.__index.on_blur then
+            integration:on_blur(self.buffer_id)
         end
     end
 end

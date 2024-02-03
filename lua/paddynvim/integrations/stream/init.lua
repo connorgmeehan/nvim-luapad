@@ -39,16 +39,16 @@ function StreamIntegration:new()
     return instance
 end
 
-function StreamIntegration:on_changed()
-    D.log("trace", "StreamIntegration:on_changed()")
-    self._state.job_manager:pre_change()
-    self._state.pipe_manager:pre_change()
+function StreamIntegration:on_pre_update()
+    D.log("trace", "StreamIntegration:on_pre_update()")
+    self._state.job_manager:on_pre_update()
+    self._state.pipe_manager:on_pre_update()
 end
 
-function StreamIntegration:on_change_finished()
-    D.log("trace", "StreamIntegration:on_change_finished()")
-    self._state.job_manager:post_change()
-    self._state.pipe_manager:post_change()
+function StreamIntegration:on_post_update()
+    D.log("trace", "StreamIntegration:on_post_update()")
+    self._state.job_manager:on_post_update()
+    self._state.pipe_manager:on_post_update()
 end
 
 return StreamIntegration

@@ -12,7 +12,6 @@ local utils = require('paddynvim.integrations.draw.lib.utils')
 local base64 = require('paddynvim.integrations.draw.lib.base64')
 local terminal = require('paddynvim.integrations.draw.lib.terminal')
 local Rectangle = require('paddynvim.integrations.draw.lib.rectangle')
-local defaults = utils.defaults
 local keys_to_string = utils.keys_to_string
 local bytes_to_string = utils.bytes_to_string
 local winpos_to_screenpos = utils.winpos_to_screenpos
