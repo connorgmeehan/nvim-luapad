@@ -153,6 +153,28 @@ M.commands = {
         M.commands.attach()
     end,
 
+    inject_integrations = function (buffer_id)
+        buffer_id = buffer_id or vim.api.nvim_get_current_buf()
+        local total_lines = vim.api.nvim_buf_line_count(0)
+
+        local offset = 0
+        for i, integration in ipairs(_G.PaddyNvim.config.integrations) do
+            local header = integration.meta.header
+            if header then
+                for i, line in ipairs(header) do
+                    vim.api.nvim_buf_set_lines(0, offset, offset, false, {line})
+                    offset = offset + 1
+                end
+            end
+        end
+
+        local did_inject = offset ~= 0
+        if did_inject then
+            vim.api.nvim_buf_set_lines(0, offset, offset, false, {"-- Welcome to Paddy :)"})
+            vim.api.nvim_buf_set_lines(0, offset+1, offset+1, false, {""})
+        end
+    end,
+
     --- Command completion handler for 
     ---@param args string[]
     ---@return string

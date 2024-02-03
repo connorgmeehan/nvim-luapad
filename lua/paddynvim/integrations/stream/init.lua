@@ -14,7 +14,7 @@ StreamIntegration.meta = {
     name = "draw",
     constructor = function (_)
         return StreamIntegration:new()
-    end
+    end,
 }
 
 

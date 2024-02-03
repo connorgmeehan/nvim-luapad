@@ -13,7 +13,12 @@ DrawIntegration.meta = {
     name = "draw",
     constructor = function (config)
         return DrawIntegration:new(config)
-    end
+    end,
+    header = {
+        "local draw = require('paddynvim.integrations.draw.lib')",
+        "draw.import_cairo('cairo' --[[ or sepecify directoy of libcairo.so/dylib]])",
+        "local Canvas = draw.Canvas"
+    }
 }
 
 

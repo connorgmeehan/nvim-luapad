@@ -5,6 +5,7 @@ local Evaluator = require("paddynvim.lib.evaluator")
 ---@class PaddyIntegrationMeta
 ---@field name string
 ---@field constructor function(config:Config,buffer_id:number):PaddyIntegration
+---@field header string[]
 
 --- Class for a paddy integration, Basically a bunch of functions representing the lifecycle of a paddy buffer.
 ---@class PaddyIntegration
