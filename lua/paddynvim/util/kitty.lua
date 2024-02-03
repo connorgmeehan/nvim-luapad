@@ -47,7 +47,6 @@ local CTRL_KEYS = {
 --- 
 ---@param source 
 M.transmit_png = function (image_id, source)
-    D.log("kitty utils", "transmit_png")
     M.send_graphics_command({
         format = 100, -- PNG
         transmission_type = 'd', -- Direct
@@ -59,7 +58,6 @@ end
 --- 
 ---@param source 
 M.display_png = function (image_id, x, y, cols, rows)
-    D.log("kitty utils", "display")
     M.move_cursor(x, y)
     M.send_graphics_command({
         action = 'p', -- Display Image by id
@@ -76,7 +74,6 @@ end
 --- 
 ---@param source 
 M.delete_png = function (image_id)
-    D.log("kitty utils", "delete")
     M.send_graphics_command({
         action = 'd', -- Display Image by id
         image_id = image_id,
@@ -100,17 +97,17 @@ M.send_graphics_command = function (keys, payload)
         end
         payload = M.get_chunked(payload)
 
-        D.log("trace", "PaddyNvim: Sending to kitty...")
+        -- D.log("trace", "PaddyNvim: Sending to kitty...")
         for i=1,#payload do
             local str = '\x1b_G'..ctrl..';'..payload[i]..'\x1b\\'
-            D.log("trace", "Chunk[" .. i .. "]: " .. str)
+            -- D.log("trace", "Chunk[" .. i .. "]: " .. str)
             M.write(str)
             if i == #payload-1 then ctrl = 'm=0' else ctrl = 'm=1' end
         end
     else
         local str = '\x1b_G'..ctrl..'\x1b\\'
-        D.log("trace", "PaddyNvim: Sending to kitty...")
-        D.log("trace", "Single: "..str)
+        -- D.log("trace", "PaddyNvim: Sending to kitty...")
+        -- D.log("trace", "Single: "..str)
         M.write(str)
     end
 end

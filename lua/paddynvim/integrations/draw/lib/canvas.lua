@@ -110,6 +110,18 @@ function Canvas:dispose()
     end
 end
 
+function Canvas:display(x, y, cell_w, cell_h)
+    if self.context then
+        self.context:finish()
+    end
+    if self.image then
+        self.image.x = x
+        self.image.y = y
+        self.image.cols = cell_w
+        self.image.rows = cell_h
+    end
+end
+
 function Canvas:on_post_update()
     D.log("trace", "[DrawIntegration] Canvas:post_update")
     if not self.context or not self.dirty then

@@ -16,7 +16,10 @@ end, {
             local keys = vim.tbl_keys(_G.PaddyNvim.commands)
             return vim.tbl_filter(function (val)
                 -- Filter out private fields (completion handlers)
-                if val and val:startswith("_") then
+                if type(val) ~= 'string' then
+                    return false
+                end
+                if vim.startswith(val, "_") then
                     return false
                 end
                 if args[2] then
