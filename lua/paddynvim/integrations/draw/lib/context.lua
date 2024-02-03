@@ -237,6 +237,11 @@ function Context:print_text(pos, text)
     self:move_to(pos)
     self:_push_command("show_text", text)
 end
+--- 
+---@param size number
+function Context:font_size(size)
+    self:_push_command("font_size", size)
+end
 
 function Context:has_changes()
     if #self.commands ~= #self.prev_commands then
