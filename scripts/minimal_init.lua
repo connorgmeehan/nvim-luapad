@@ -21,7 +21,7 @@ else
     local stream = require('paddynvim.integrations.stream')
 
     require('paddynvim').setup({
-        debug = true,
+        -- debug = true,
         integrations = { cpml, draw, stream },
     })
 end

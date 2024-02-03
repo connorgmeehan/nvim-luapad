@@ -1,3 +1,4 @@
+local D = require('paddynvim.util.debug')
 local base64         = require('paddynvim.util.base64')
 local kitty          = require "paddynvim.util.kitty"
 --- Converts from human readable file format to kitty code.
@@ -56,6 +57,7 @@ function Image:draw()
 end
 
 function Image:dispose()
+    D.log("trace", "[DrawIntegration] image:dispose() on self")
     kitty.delete_png(self.id)
 end
 

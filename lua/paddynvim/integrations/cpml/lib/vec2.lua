@@ -239,6 +239,15 @@ function vec2.perpendicular(a)
 	return new(-a.y, a.x)
 end
 
+--- Treating the two vectors as a 2x2 matrix, 
+--gets the matrix determinate.
+---@param a vec2
+---@param b vec2
+---@return number
+function vec2.determinate(a, b)
+    return a.x * b.y - a.y * b.x
+end
+
 --- Signed angle from one vector to another.
 -- Rotations from +x to +y are positive.
 ---@param a vec2 Vector
@@ -311,7 +320,7 @@ end
 
 
 --- Return a boolean showing if a table is or is not a vec2.
----@param a vec2 Vector to be tested
+---@param a vec2|any Vector to be tested
 ---@return boolean is_vec2
 function vec2.is_vec2(a)
 	if type(a) == "cdata" then

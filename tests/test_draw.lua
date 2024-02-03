@@ -23,10 +23,11 @@ local T = MiniTest.new_set({
 })
 
 -- Tests related to the `setup` method.
-T["setup()"] = MiniTest.new_set()
+T["test_draw"] = MiniTest.new_set()
 
-T["setup()"]["sets exposed methods and default options value"] = function()
+T["test_draw"]["Exposes draw global object"] = function()
     child.lua([[require('paddynvim').set_config({ debug = false })]])
+    child.cmd([[Paddy new test]])
 
     -- global object that holds your plugin information
     eq_type_global(child, "_G.PaddyNvim", "table")

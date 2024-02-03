@@ -1,5 +1,6 @@
 local D = require('paddynvim.util.debug')
 local Canvas = require('paddynvim.integrations.draw.lib.canvas')
+local array = require('paddynvim.util.array')
 --- Integration for drawing using Kitty graphics protocol and libcairo
 ---
 --- Source https://github.com/romgrk/kui.nvim/tree/master Vendored under MIT License.
@@ -54,6 +55,30 @@ function DrawIntegration:new(c)
     return instance
 end
 
+function DrawIntegration:on_attach()
+    local cpml_integration = array.array_find( _G.PaddyNvim.config.integrations, function (_, integration)
+        return integration.meta.name == "cpml"
+    end)
+    if not cpml_integration then
+        local message = [[
+        Paddy: `draw` integration requires the `cpml` integration for math.
+        Add the following to your config.
+
+        local cpml = require('paddy.integration.cpml')
+        local draw = require('paddy.integration.draw')
+        require('paddy').setup({
+            integrations = { cpml, draw }
+        })
+        ]]
+        vim.notify(message, vim.log.levels.ERROR)
+        error(message)
+    end
+end
+
+function DrawIntegration:on_detach()
+    self._state.canvas_manager:on_detach()
+end
+
 function DrawIntegration:on_pre_update()
     D.log("trace", "DrawIntegration:on_pre_update()")
     self._state.canvas_manager:on_pre_update()
@@ -67,10 +92,6 @@ end
 function DrawIntegration:on_post_update()
     D.log("trace", "DrawIntegration:on_post_update()")
     self._state.canvas_manager:on_post_update()
-end
-
-function DrawIntegration:on_detach()
-    self._state.canvas_manager:on_detach()
 end
 
 return DrawIntegration

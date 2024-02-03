@@ -6,6 +6,7 @@ local coordinates    = require "paddynvim.util.coordinates"
 local kitty          = require "paddynvim.util.kitty"
 local Image          = require "paddynvim.integrations.draw.lib.new_image"
 ---@class Canvas
+---@field id number
 ---@field width number
 ---@field height number
 ---@field surface cairo_surface_t
@@ -48,8 +49,6 @@ function Canvas:retained_equals(other)
     return self.width == other.width and self.height == other.height
 end
 
---- 
----@return 
 function Canvas:get_context()
     if self.surface == nil then
         local cairo = self.draw_integration._state.cairo
@@ -60,24 +59,6 @@ function Canvas:get_context()
         self.context = Context:new(self)
     end
     return self.context
-end
-
-function Canvas:as_image()
-
-end
-
---- Returns a cdata<char *>
----@return ffi.cdata<char *>
-function Canvas:pixel_data()
-    if self.surface == nil then
-        return nil
-    end
-    local length = self.width * self.height * 4
-    local raw_data = ffi.cast("char *", self.surface:data())
-    return setmetatable(
-        raw_data,
-        {__len = function() return length end}
-    )
 end
 
 --- Gets the PNG data of the canvas. 
@@ -99,42 +80,53 @@ function Canvas:png_data()
 end
 
 function Canvas:dispose()
+    D.log("trace", "[DrawIntegration] Canvas:dispose")
     if self.context then
         self.context:dispose()
-    end
-    if self.image then
-        self.image:dispose()
     end
     if self.surface then
         self.surface:free()
     end
+    if self.image then
+        self.image:dispose()
+    end
 end
 
 function Canvas:display(x, y, cell_w, cell_h)
-    if self.context then
-        self.context:finish()
+    if not self.context then
+        return
     end
-    if self.image then
-        self.image.x = x
-        self.image.y = y
-        self.image.cols = cell_w
-        self.image.rows = cell_h
+    local changed = self.context:flush()
+    D.log("trace", "[DrawIntegration] Canvas:display -> Has changes? %s", changed)
+
+    if self.image == nil then
+        changed = true
+        D.log("trace", "[DrawIntegration] Canvas:display -> Creating image")
+        self.image = Image:from_canvas(self)
+    elseif changed then
+        D.log("trace", "[DrawIntegration] Canvas:display -> Updating image")
+        self.image:update_from_canvas(self)
     end
+
+    self.image.x = x
+    self.image.y = y
+    self.image.cols = cell_w
+    self.image.rows = cell_h
+    self.needs_transfer = changed
 end
 
 function Canvas:on_post_update()
     D.log("trace", "[DrawIntegration] Canvas:post_update")
-    if not self.context or not self.dirty then
+    if not self.context or not self.image then
         return
     end
 
-    if not self.image then
-        self.image = Image:from_canvas(self)
-    else
-        self.image:update_from_canvas(self)
+    if self.needs_transfer then
+        D.log("trace", "[DrawIntegration] Canvas:post_update -> Transfering image")
+        self.needs_transfer = false
+        self.image:transfer()
     end
-
-    self.image:transfer()
+    D.log("trace", "[DrawIntegration] Canvas:post_update -> Drawing image")
     self.image:draw()
 end
 
